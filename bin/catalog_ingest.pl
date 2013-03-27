@@ -34,10 +34,11 @@ use DB::IngestUtils;
 
 $| = 1;
 
-my ($fileList,$archiveNode,$imageId,$band,$equinox,
+my ($filename,$fileList,$archiveNode,$imageId,$band,$equinox,
     $isCoadd,$tmpTable,$batchSize,$mergeTable,$partKey) = undef;
 
 Getopt::Long::GetOptions(
+   "filename=s" => \$filename,
    "filelist=s" => \$fileList,
    "archivenode=s" => \$archiveNode,
    "tmptable=s" => \$tmpTable,
@@ -45,7 +46,8 @@ Getopt::Long::GetOptions(
    "mergetable=s" => \$mergeTable
 ) or usage("Invalid command line options\n");
 
-usage("\n\nYou must supply a filelist") unless defined $fileList;
+usage("\n\nYou must supply a filename or filelist") 
+    unless (defined $fileList or defined $filename);
 usage("\n\nYou must supply a mergetable") unless defined $mergeTable;
 usage("\n\nYou must supply a tmptable") unless defined $tmpTable;
 
@@ -59,7 +61,12 @@ my $errorStr;
 # Read in the filelist
 #
 my @files;
-readFileList($fileList,\@files);
+if($fileList) {
+    readFileList($fileList,\@files);
+}
+else {
+    $files[0] = parseFullFilename($filename);
+}
 
 #
 # Get all files for a runID
@@ -371,6 +378,22 @@ exit(0);
 #
 # Subroutines
 #
+
+sub parseFullFilename {
+    my $fullfile = shift;
+    my %fileinfo;
+    
+    if($fullfile =~ /^(.*\/)(.*)$/) {
+        $fileinfo{"localpath"} = $1;
+        $fileinfo{"localfilename"} = $2;
+    }
+    else {
+        $fileinfo{"localpath"} = cwd() . "/";
+        $fileinfo{"localfilename"} = $fullfile;
+    }
+    return \%fileinfo;
+}
+
   
 sub usage {
 
