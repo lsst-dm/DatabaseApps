@@ -62,10 +62,11 @@ my $errorStr;
 #
 my @files;
 if($fileList) {
-    readFileList($fileList,\@files);
+    #readFileList($fileList,\@files);
+    parseFilelist($fileList,\@files);
 }
 else {
-    $files[0] = parseFullFilename($filename);
+    parseFullFilename($filename,\@files);
 }
 
 #
@@ -381,6 +382,7 @@ exit(0);
 
 sub parseFullFilename {
     my $fullfile = shift;
+    my $files = shift;
     my %fileinfo;
     
     if($fullfile =~ /^(.*\/)(.*)$/) {
@@ -391,9 +393,23 @@ sub parseFullFilename {
         $fileinfo{"localpath"} = cwd() . "/";
         $fileinfo{"localfilename"} = $fullfile;
     }
-    return \%fileinfo;
+    push(@$files,\%fileinfo);
 }
 
+sub parseFilelist {
+    my $filelist = shift;
+    my $files = shift;
+
+    open (FH, "$filelist") or die "Cannot open filelist: $filelist";
+    my @lines = <FH>;
+    foreach my $line (@lines) {
+        chomp($line);
+        $line =~ s/^\s*//;
+        $line =~ s/\s*$//;
+        parseFullFilename($line,$files);
+    }
+    close FH;
+}
   
 sub usage {
 
