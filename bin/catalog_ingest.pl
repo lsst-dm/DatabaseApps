@@ -274,7 +274,7 @@ while ($tCount <= $numFiles-1){
     $insertHashRef->{'SOFTID'}    = \@softIds;
     $insertHashRef->{'ZEROPOINT'} = \@zeroPoints;
     $insertHashRef->{'PARTKEY'}   = \@runs;
-    $insertHashRef->{'CATALOGNAME'} = \@catnames;
+    $insertHashRef->{'FILENAME'} = \@catnames;
     #
     # Insert whatever is in  ALPHA_J2000 and DELTA_J2000 in ra, dec
     #
