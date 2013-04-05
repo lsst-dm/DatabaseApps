@@ -23,8 +23,6 @@ use Carp;
 use Getopt::Long;
 use Pod::Usage;
 use FindBin;
-#use lib ("$FindBin::Bin/../lib/perl5","$FindBin::Bin/../lib");
-#use DB::DESUtil;
 use coreutils::DESUtil;
 use DB::EventUtils;
 
@@ -38,7 +36,7 @@ Getopt::Long::GetOptions(
    'source-table|stbl=s' => \$src_table,
    'target-table|target_table|object-table|object_table|ttbl=s' => \$target_table,
    'overwrite' => \$overwrite,
-   'validate' => \$validate,
+#   'validate' => \$validate,
    'verbose=i' => \$verbose,
    'source-schema=s' => \$source_schema,
    'target-schema=s' => \$target_schema,
@@ -46,21 +44,21 @@ Getopt::Long::GetOptions(
 );
 
 # validation will not work, so disable it for now
-$validate = undef;
-
-if (defined($validate) && ! $project) {
-    Pod::Usage::pod2usage (
-    -verbose => 0, -exitval => 2, -output => \*STDERR,
-    -message => 'Must provide a project argument for validation, which is the PROJECT used for the run that created the files being ingested.'
-  );
-}
-
-if (defined($validate) && ! $run) {
-  Pod::Usage::pod2usage (
-  -verbose => 0, -exitval => 2, -output => \*STDERR,
-  -message => 'Must provide a file_run argument for validation, which is the RUN that created the files being ingested.'
-  );
-}
+#$validate = undef;
+#
+#if (defined($validate) && ! $project) {
+#    Pod::Usage::pod2usage (
+#    -verbose => 0, -exitval => 2, -output => \*STDERR,
+#    -message => 'Must provide a project argument for validation, which is the PROJECT used for the run that created the files being ingested.'
+#  );
+#}
+#
+#if (defined($validate) && ! $run) {
+#  Pod::Usage::pod2usage (
+#  -verbose => 0, -exitval => 2, -output => \*STDERR,
+#  -message => 'Must provide a file_run argument for validation, which is the RUN that created the files being ingested.'
+#  );
+#}
 
 if (! $src_table) {
   Pod::Usage::pod2usage (
@@ -86,71 +84,71 @@ my $db = coreutils::DESUtil->new();
 
 
 # Do some checking:
-if (defined($validate)) {
-    print "Validating Contents of $src_table.\n";
-
-    my $start = time;
-    my $cats = $db->selectall_hashref( "select a.id,a.objects from catalog a,location b where a.project='$project' and a.run='$run' and a.catalogtype='red_cat' and a.id=b.id and regexp_like(b.archivesites,'[^N]')",'id') ; 
-    print "Catalog query took ", time - $start, " seconds\n";
-
-    $start = time;
-    my $tmpobjs = $db->selectall_hashref( "select catalogid, count(*) from $src_table group by catalogid", 'catalogid'); 
-    print "Tmp table query took ", time - $start, " seconds\n";
-
-    my $ncats = scalar keys %$cats;
-    print "Number of catalogs for run: $ncats\n";
-
-    my $ntmpobjs = scalar keys %$tmpobjs;
-    print "Number of catalogs in src_table: $ntmpobjs\n";
-
-
-    my $error = 0;
-
-    my %allcatids = ();
-    foreach my $id (keys %$cats) {
-       $allcatids{$id} = 1;
-    }
-    foreach my $id (keys %$tmpobjs) {
-       $allcatids{$id} = 1;
-    }
-
-    my $sumactual = 0;
-    my $sumexpected = 0;
-    foreach my $id (keys %allcatids) {
-        my $Nactual = -1;
-        my $Nexpected = -1;
-        if (defined($cats->{$id})) {
-            $Nexpected = $cats->{$id}{'objects'};
-            $sumexpected += $Nexpected;
-        }
-        if (defined($tmpobjs->{$id})) {
-            $Nactual = $tmpobjs->{$id}{'count(*)'};
-            $sumactual += $Nactual;
-        }
-
-
-        if ($Nexpected != 0) {
-            printf("CatalogID: %10d  Expected Objects: %10d  Ingested Objects: %10d   ", $id, $Nexpected, $Nactual);
-            if ($Nexpected != $Nactual) {
-                print "***";
-                $error = 1;
-            }
-            print "\n";
-        }
-    }
-
-    print "\n\n";
-    reportEvent($verbose,"STATUS",1,"Total expected = $sumexpected, Total actual = $sumactual");
-
-    if ($error) {
-        reportEvent($verbose,"STATUS",5,"Exiting due to errors caught by validation");
-        $db->disconnect;
-        exit 255;
-    }
-}
-else {
-    print "Skipping validation of $src_table.\n";
-}
+#if (defined($validate)) {
+#    print "Validating Contents of $src_table.\n";
+#
+#    my $start = time;
+#    my $cats = $db->selectall_hashref( "select a.id,a.objects from catalog a,location b where a.project='$project' and a.run='$run' and a.catalogtype='red_cat' and a.id=b.id and regexp_like(b.archivesites,'[^N]')",'id') ; 
+#    print "Catalog query took ", time - $start, " seconds\n";
+#
+#    $start = time;
+#    my $tmpobjs = $db->selectall_hashref( "select catalogid, count(*) from $src_table group by catalogid", 'catalogid'); 
+#    print "Tmp table query took ", time - $start, " seconds\n";
+#
+#    my $ncats = scalar keys %$cats;
+#    print "Number of catalogs for run: $ncats\n";
+#
+#    my $ntmpobjs = scalar keys %$tmpobjs;
+#    print "Number of catalogs in src_table: $ntmpobjs\n";
+#
+#
+#    my $error = 0;
+#
+#    my %allcatids = ();
+#    foreach my $id (keys %$cats) {
+#       $allcatids{$id} = 1;
+#    }
+#    foreach my $id (keys %$tmpobjs) {
+#       $allcatids{$id} = 1;
+#    }
+#
+#    my $sumactual = 0;
+#    my $sumexpected = 0;
+#    foreach my $id (keys %allcatids) {
+#        my $Nactual = -1;
+#        my $Nexpected = -1;
+#        if (defined($cats->{$id})) {
+#            $Nexpected = $cats->{$id}{'objects'};
+#            $sumexpected += $Nexpected;
+#        }
+#        if (defined($tmpobjs->{$id})) {
+#            $Nactual = $tmpobjs->{$id}{'count(*)'};
+#            $sumactual += $Nactual;
+#        }
+#
+#
+#        if ($Nexpected != 0) {
+#            printf("CatalogID: %10d  Expected Objects: %10d  Ingested Objects: %10d   ", $id, $Nexpected, $Nactual);
+#            if ($Nexpected != $Nactual) {
+#                print "***";
+#                $error = 1;
+#            }
+#            print "\n";
+#        }
+#    }
+#
+#    print "\n\n";
+#    reportEvent($verbose,"STATUS",1,"Total expected = $sumexpected, Total actual = $sumactual");
+#
+#    if ($error) {
+#        reportEvent($verbose,"STATUS",5,"Exiting due to errors caught by validation");
+#        $db->disconnect;
+#        exit 255;
+#    }
+#}
+#else {
+#    print "Skipping validation of $src_table.\n";
+#}
 
 
 #print "Calling mergeTmpTablePrc\n";
