@@ -26,7 +26,7 @@ use File::Path;
 use File::stat;
 use Getopt::Long;
 use Time::localtime;
-use Carp;
+use Carp qw(cluck);
 
 use coreutils::DESUtil;
 use DB::EventUtils;
@@ -189,7 +189,7 @@ while ($tCount <= $numFiles-1){
         );
 
     if ($status){
-      warn "Problem opening $catFilename:  $status\n";
+      warn "Problem opening $localPath/$catFilename:  $status\n";
       $status=0;
     }
     my ($hduType,$nHdus,$nCols,$nRows,$zeropoint,$comment) = 0;
@@ -349,7 +349,7 @@ while ($tCount <= $numFiles-1){
     }
     };
     if($@){
-        confess "Error in ingest!";
+        cluck "Error in ingest!";
     }
     $tCount++;
 }
