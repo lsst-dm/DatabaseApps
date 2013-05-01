@@ -26,6 +26,7 @@ use File::Path;
 use File::stat;
 use Getopt::Long;
 use Time::localtime;
+use Carp;
 
 use coreutils::DESUtil;
 use DB::EventUtils;
@@ -326,6 +327,7 @@ while ($tCount <= $numFiles-1){
       push @{$runIdHashRef->{$tmpTable}->{$col}},@{$insertHashRef->{$col}};
     }
 
+    eval{
     if ( (($tCount != 0) && !($tCount % $batchSize)) || 
        ($tCount == $#resolvedFilenames) ){
       foreach my $tmpObjTable (keys %$runIdHashRef){
@@ -345,7 +347,10 @@ while ($tCount <= $numFiles-1){
       }
       $runIdHashRef = undef;
     }
-
+    };
+    if($@){
+        confess "Error in ingest!";
+    }
     $tCount++;
 }
 
