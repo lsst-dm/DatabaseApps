@@ -530,7 +530,7 @@ sub getTableInfo {
 
   my $sql = qq{SELECT COLUMN_NAME, DATA_TYPE, DATA_LENGTH, DATA_PRECISION, DATA_SCALE
                  FROM ALL_TAB_COLUMNS 
-                 WHERE TABLE_NAME in ($tableStr) AND OWNER='NEW_ARCH'};
+                 WHERE TABLE_NAME in ($tableStr) AND OWNER=USER};
 
   my $sth = $dbh->prepare($sql);
   $sth->execute( );
@@ -743,7 +743,7 @@ sub ingestObjectsHashRef {
 
   #my $valueClause = q{objects_seq.nextval,};
   my $valueClause = q{};
-  my $objTableInfoHashRef = getTableInfo($dbh,'OBJECTS_CURRENT');
+  my $objTableInfoHashRef = getTableInfo($dbh,$tmpObjectsTable);
   my $insertHashRef;
   my $rows = $tmpObjectsHashRef->{'OBJECT_NUMBER'};
   my $nRows = scalar(@$rows);

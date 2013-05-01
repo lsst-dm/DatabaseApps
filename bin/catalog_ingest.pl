@@ -327,7 +327,6 @@ while ($tCount <= $numFiles-1){
       push @{$runIdHashRef->{$tmpTable}->{$col}},@{$insertHashRef->{$col}};
     }
 
-    eval{
     if ( (($tCount != 0) && !($tCount % $batchSize)) || 
        ($tCount == $#resolvedFilenames) ){
       foreach my $tmpObjTable (keys %$runIdHashRef){
@@ -346,10 +345,6 @@ while ($tCount <= $numFiles-1){
         delete $runIdHashRef->{$tmpObjTable};
       }
       $runIdHashRef = undef;
-    }
-    };
-    if($@){
-        cluck "Error in ingest!";
     }
     $tCount++;
 }
