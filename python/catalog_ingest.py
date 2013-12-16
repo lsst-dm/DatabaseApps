@@ -35,12 +35,6 @@ def getObjectColumns():
     dbh = desdbi.DesDbi()
     results = OrderedDict()
     sqlstr = '''
-    select file_header_name, position, column_name 
-    from ops_metadata om where exists(
-        select * from ops_object_metadata oo
-        where oo.file_header_name=om.file_header_name
-            and oo.current_flag=1 and oo.position=om.position)'''
-    sqlstr = '''
         select hdu, UPPER(attribute_name), position, column_name, derived, datafile_datatype
         from ops_datafile_metadata
         where filetype='red_cat'
@@ -180,8 +174,8 @@ def catalogIngest(hduList,constDict,tablename):
     if sqlldr and sqlldr.wait():
         exit("sqlldr exited with errors. See " + logfile + ", " + discardfile + " and " + badrowsfile + " for details")
     else:
-        if os.path.exists(controlfilename):
-            os.remove(controlfilename)
+        #if os.path.exists(controlfilename):
+        #    os.remove(controlfilename)
         if os.path.exists(logfile):
             os.remove(logfile)
         if os.path.exists(badrowsfile):
