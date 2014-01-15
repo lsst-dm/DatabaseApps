@@ -31,16 +31,16 @@ funcdict = { 'BAND': convutils.func_getband, 'NITE': convutils.func_getnite }
 def dataTypeMap():
     return {'E':'float external','D':'decimal external','I':'integer external','J':'integer external'}
 
-def getObjectColumns():
+def getObjectColumns(filetype):
     dbh = desdbi.DesDbi()
     results = OrderedDict()
     sqlstr = '''
         select hdu, UPPER(attribute_name), position, column_name, derived, datafile_datatype
         from ops_datafile_metadata
-        where filetype='red_cat'
+        where filetype=:ftype
         order by 1,2,3'''
     cursor = dbh.cursor()
-    cursor.execute(sqlstr)
+    cursor.execute(sqlstr,{'ftype':filetype})
     records = cursor.fetchall()
     for rec in records:
         if rec[0] not in results:
@@ -124,7 +124,7 @@ def writeControlFile(controlFileName, constDict, dbObjectData, hduList, tablenam
     controlfile.close()
 
 
-def catalogIngest(hduList,constDict,tablename):
+def catalogIngest(hduList,constDict,tablename,filetype):
     controlfilename = 'catingest.ctl'
     logfile = 'catingest.log'
     badrowsfile = 'badrows.bad'
@@ -139,7 +139,7 @@ def catalogIngest(hduList,constDict,tablename):
     sqlldr_command.append("discard=" + discardfile)
     sqlldr_command.append("silent=header,feedback,partitions")
 
-    dbdata = getObjectColumns()
+    dbdata = getObjectColumns(filetype)
     writeControlFile(controlfilename, constDict, dbdata, hduList, tablename)
     print("sqlldr control file " + controlfilename + " created")
     columnsToCollect = dbdata["LDAC_OBJECTS"]
@@ -147,8 +147,6 @@ def catalogIngest(hduList,constDict,tablename):
     try:
         print("invoking sqlldr with control file " + controlfilename)
         sqlldr = subprocess.Popen(sqlldr_command,shell=False,stdin=subprocess.PIPE)
-        #time.sleep(1)
-        #sqlldr.stdin.write(connectinfo["passwd"] + "\n")
         
         data = hduList["LDAC_OBJECTS"].data
         orderedFitsColumns = data.columns.names
@@ -174,8 +172,8 @@ def catalogIngest(hduList,constDict,tablename):
     if sqlldr and sqlldr.wait():
         exit("sqlldr exited with errors. See " + logfile + ", " + discardfile + " and " + badrowsfile + " for details")
     else:
-        #if os.path.exists(controlfilename):
-        #    os.remove(controlfilename)
+        if os.path.exists(controlfilename):
+            os.remove(controlfilename)
         if os.path.exists(logfile):
             os.remove(logfile)
         if os.path.exists(badrowsfile):
@@ -231,10 +229,11 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         request = sys.argv[1]
         filename = sys.argv[2]
-        temptable = sys.argv[3]
-        targettable = sys.argv[4]
+        filetype = sys.argv[3]
+        temptable = sys.argv[4]
+        targettable = sys.argv[5]
  
-    print("Preparing to load " + filename + " into " + temptable)
+    print("Preparing to load " + filename + " of type " + filetype + " into " + temptable)
 
     constVals = {"FILENAME":[getShortFilename(filename),True], "REQNUM":[request,False]}
 
@@ -254,7 +253,7 @@ if __name__ == '__main__':
                 raise Exception(errstr)
                 exit(1)
 
-        catalogIngest(hduList, constVals, temptable)
+        catalogIngest(hduList, constVals, temptable, filetype)
     
         print("catalogIngest load of " + str(numCatObjects) + " objects from " + filename + " completed")
 
