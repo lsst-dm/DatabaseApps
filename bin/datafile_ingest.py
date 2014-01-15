@@ -91,8 +91,8 @@ if __name__ == '__main__':
     if(len(sys.argv) > 1):
         filename = sys.argv[1]
         filetype = sys.argv[2]
-        sys.stderr.write("Missing required parameters. Must include filename, filetype")
     else:
+        sys.stderr.write("Missing required parameters. Must include filename, filetype\n")
         exit(1)
 
     try:
