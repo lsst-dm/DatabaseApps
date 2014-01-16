@@ -102,7 +102,8 @@ def parseFitsTypeLength(formatsByColumn):
 def writeControlFile(controlFileName, constDict, dbObjectData, hduList, tablename):
     dt = dataTypeMap()
     controlfile = file(controlFileName, 'w')
-    getValuesFromImageHeader(constDict, dbObjectData['LDAC_IMHEAD'], hduList['LDAC_IMHEAD'])
+    if 'LDAC_IMHEAD' in dbObjectData:
+        getValuesFromImageHeader(constDict, dbObjectData['LDAC_IMHEAD'], hduList['LDAC_IMHEAD'])
     writeControlfileHeader(controlfile, constDict, tablename)
     data = hduList["LDAC_OBJECTS"].data
     dbdata = dbObjectData["LDAC_OBJECTS"]
