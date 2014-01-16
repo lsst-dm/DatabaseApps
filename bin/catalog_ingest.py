@@ -168,7 +168,8 @@ def catalogIngest(hduList,constDict,tablename,filetype):
                 idx = idx+1
             sqlldr.stdin.write(",".join(dbrow) + "\n")
     finally:
-        sqlldr.stdin.close()
+        if sqlldr:
+            sqlldr.stdin.close()
    
     if sqlldr and sqlldr.wait():
         exit("sqlldr exited with errors. See " + logfile + ", " + discardfile + " and " + badrowsfile + " for details")
