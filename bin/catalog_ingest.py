@@ -55,14 +55,18 @@ def getObjectColumns(filetype):
     return results
 
 
-def getValuesFromImageHeader(constDict,dbDict,hdu):
+def getValuesFromHeader(constDict,dbDict,hduName,hduList):
     value = None
     quoteit = None
-    data = hdu.data
-    cards = []
-    for cd in data[0][0]:
-        cards.append(pyfits.Card.fromstring(cd))
-    hdr = pyfits.Header(cards)
+    hdr = None
+    if hduName == 'LDAC_IMHEAD':
+        data = hdu.data
+        cards = []
+        for cd in data[0][0]:
+            cards.append(pyfits.Card.fromstring(cd))
+        hdr = pyfits.Header(cards)
+    else:
+        hdr = hduList[hduName].header
     for attribute, dblist in dbDict.iteritems():
         for col in dblist[CATINGEST_COLUMN_NAME]:
             if dblist[CATINGEST_DERIVED] == 'c':
@@ -102,8 +106,9 @@ def parseFitsTypeLength(formatsByColumn):
 def writeControlFile(controlFileName, constDict, dbObjectData, hduList, tablename):
     dt = dataTypeMap()
     controlfile = file(controlFileName, 'w')
-    if 'LDAC_IMHEAD' in dbObjectData:
-        getValuesFromImageHeader(constDict, dbObjectData['LDAC_IMHEAD'], hduList['LDAC_IMHEAD'])
+    for hduName in dbObjectData.keys():
+        if hduName not in ['LDAC_OBJECTS','WCL']:
+            getValuesFromHeader(constDict, dbObjectData[hduName], hduName, hduList)
     writeControlfileHeader(controlfile, constDict, tablename)
     data = hduList["LDAC_OBJECTS"].data
     dbdata = dbObjectData["LDAC_OBJECTS"]
