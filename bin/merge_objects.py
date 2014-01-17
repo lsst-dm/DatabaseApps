@@ -48,7 +48,10 @@ if __name__ == '__main__':
 
     dbh = desdbi.DesDbi()
     cursor = dbh.cursor()
-    cursor.callproc("%s.pMergeObjects" % targetschema,[temptable,targettable,tempschema,targetschema])
+    if targetschema == None:
+        cursor.callproc("pMergeObjects",[temptable,targettable,tempschema,targetschema])
+    else:
+        cursor.callproc("%s.pMergeObjects" % targetschema,[temptable,targettable,tempschema,targetschema])
 
     cursor.close()
     print "Merge complete"
