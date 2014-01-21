@@ -34,10 +34,12 @@ if __name__ == '__main__':
         sys.stderr.write("ERROR: " + "; ".join(errors) + "\n")
         exit(1)
 
-    print "Creating temp table %s using %s as a template..." % (args['temptable'], args['targettable'])
-
     dbh = desdbi.DesDbi()
     cursor = dbh.cursor()
+    print "Creating tablespace %s ..." % args['tablespace']
+    cursor.callproc("des_admin.createObjectsTablespace",[args['tablespace']])
+
+    print "Creating temp table %s using %s as a template..." % (args['temptable'], args['targettable'])
     cursor.execute("create table %s tablespace %s as select * from %s where 1=0" % (args['temptable'], args['tablespace'],args['targettable']))
     cursor.close()
     print "Temp table %s created successfully" % args['temptable']
