@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from coreutils.desdbi import DesDbi
+from coreutils.miscutils import *
 import intgutils.wclutils as wclutils
 import sys, os
 from collections import OrderedDict
@@ -84,25 +85,26 @@ def getSectionsForFiletype(filetype,dbh):
 
 if __name__ == '__main__':
 
-    filename = None
+    fullname = None
     filetype = None
     dbh = None
 
     if(len(sys.argv) > 1):
-        filename = sys.argv[1]
+        fullname = sys.argv[1]
         filetype = sys.argv[2]
     else:
         sys.stderr.write("Missing required parameters. Must include filename, filetype\n")
         exit(1)
 
     try:
-        print "datafile_ingest.py: Preparing to ingest " + filename
+        print "datafile_ingest.py: Preparing to ingest " + fullname
         dbh = DesDbi()
         sectionsWanted = getSectionsForFiletype(filetype,dbh)
-        mydict = xmlslurp.xmlslurper(filename,sectionsWanted).gettables()
+        mydict = xmlslurp.xmlslurper(fullname,sectionsWanted).gettables()
+        filename = parse_fullname(fullname, CU_PARSE_FILENAME) 
         ingest_datafile_contents(filename,filetype,mydict,dbh)
         dbh.commit()
-        print "datafile_ingest.py: ingest of " + filename + " complete"
+        print "datafile_ingest.py: ingest of " + fullname + " complete"
     finally:
         if dbh is not None:
             dbh.close()
