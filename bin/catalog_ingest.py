@@ -171,7 +171,10 @@ def catalogIngest(hduList,constDict,tablename,filetype):
                             if str(counter) in columnsToCollect[orderedFitsColumns[idx]][CATINGEST_POSITION]:
                                 dbrow.append(str(row[idx][counter]))
                 idx = idx+1
-            sqlldr.stdin.write(",".join(dbrow) + "\n")
+            if sqlldr and sqlldr.poll() == None:
+                sqlldr.stdin.write(",".join(dbrow) + "\n")
+            else:
+                exit("sqlldr exited with errors. See " + logfile + ", " + discardfile + " and " + badrowsfile + " for details")
     finally:
         if sqlldr:
             sqlldr.stdin.close()
