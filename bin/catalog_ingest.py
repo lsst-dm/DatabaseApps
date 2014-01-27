@@ -17,6 +17,7 @@ from collections import OrderedDict
 from coreutils import desdbi
 from coreutils import serviceaccess
 import convutils
+import argparse
 
 CATINGEST_COLUMN_NAME = 0
 CATINGEST_DERIVED = 1
@@ -227,22 +228,33 @@ def getNumObjects(hduList):
     data = hduList["LDAC_OBJECTS"].data
     return len(data)
 
+def checkParam(args,param):
+    if args[param]:
+        return args[param]
+    else:
+        sys.stderr.write("Missing required parameter: %s" % param)
 
 
 if __name__ == '__main__':
 
-    request = None
-    filename = None
-    tablename = None
     hduList = None
 
-    if len(sys.argv) > 1:
-        request = sys.argv[1]
-        filename = sys.argv[2]
-        filetype = sys.argv[3]
-        temptable = sys.argv[4]
-        targettable = sys.argv[5]
- 
+    parser = argparse.ArgumentParser(description='Ingest objects from a fits catalog')
+    parser.add_argument('--request',action='store')
+    parser.add_argument('--filename',action='store')
+    parser.add_argument('--filetype',action='store')
+    parser.add_argument('--temptable',action='store')
+    parser.add_argument('--targettable',action='store')
+
+    args, unknown_args = parser.parse_known_args()
+    args = vars(args)
+
+    request = checkParam(args,'request')
+    filename = checkParam(args,'filename')
+    filetype = checkParam(args,'filetype')
+    temptable = checkParam(args,'temptable')
+    targettable = checkParam(args,'targettable')
+
     print("Preparing to load " + filename + " of type " + filetype + " into " + temptable)
 
     constVals = {"FILENAME":[getShortFilename(filename),True], "REQNUM":[request,False]}

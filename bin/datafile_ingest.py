@@ -6,6 +6,22 @@ import intgutils.wclutils as wclutils
 import sys, os
 from collections import OrderedDict
 import xmlslurp
+import pyfits
+import argparse
+
+
+DI_COLUMNS = 'columns'
+DI_DATATYPE = 'datatype'
+DI_FORMAT = 'format'
+
+
+# a case-insensitive dictionary getter
+def ci_get(myDict, myKey):
+    for k,v in myDict.iteritems():
+        if myKey.lower() == k.lower():
+            return v
+    return None
+# end ci_get
 
 def printNode(indict, level, filehandle):
     leveltabs = ""
@@ -33,11 +49,25 @@ def ingest_datafile_contents(sourcefile,filetype,dataDict,dbh):
     else:
         indata=dataDict
 
+    dateformat = None
+
     for hdu,attrDict in metadata.iteritems():
         for attribute,cols in attrDict.iteritems():
-            for indx, colname in enumerate(cols):
+            for indx, colname in enumerate(cols[DI_COLUMNS]):
                 columnlist.append(colname)
+                # handle timestamp format; does not support multiple formats in one input file
+                if cols[DI_DATATYPE] == 'date':
+                    if dateformat and dateformat != cols[DI_FORMAT]:
+                        sys.stderr.write("ERROR: Unsupported configuration for filetype=%s: Multiple different date formats found\n" % filetype)
+                        exit(1)
+                    dateformat = cols[DI_FORMAT]
+                ###
         columnlist.append('filename')
+
+    # handle timestamp format; does not support multiple formats in one input file
+    if dateformat:
+        cur = dbh.cursor()
+        cur.execute("ALTER SESSION SET NLS_TIMESTAMP_FORMAT = '%s'" % dateformat)
 
     for hdu,attrDict in dataDict.iteritems():
         indata = []
@@ -47,26 +77,42 @@ def ingest_datafile_contents(sourcefile,filetype,dataDict,dbh):
             indata=attrDict
         for inrow in indata:
             row = {}
-            for attribute,cols in metadata[hdu].iteritems():
-                for indx, colname in enumerate(cols):
-                    if attribute in inrow.keys():
-                        if type(inrow[attribute]) is list:
-                            if indx < len(inrow[attribute]):
-                                row[colname] = inrow[attribute][indx]
+            for attribute,coldata in metadata[hdu].iteritems():
+                for indx, colname in enumerate(coldata[DI_COLUMNS]):
+                    attr = None
+                    if isinstance(inrow,dict):
+                        attr = ci_get(inrow,attribute)
+                    else:
+                        fitscols = indata.columns.names
+                        for k in fitscols:
+                            if k.lower() == attribute.lower():
+                                attr = inrow.field(k)
+                                break
+                    if attr:
+                        if type(attr) is list:
+                            if indx < len(attr):
+                                row[colname] = attr[indx]
                             else:
                                 row[colname] = None
                         else:
                             if indx == 0:
-                                row[colname] = inrow[attribute]
+                                if coldata[DI_DATATYPE] == 'int':
+                                    row[colname] = int(attr)
+                                elif coldata[DI_DATATYPE] == 'float':
+                                    row[colname] = float(attr)
+                                else:
+                                    row[colname] = attr
                             else:
                                 row[colname] = None
                     else:
                         row[colname] = None
-        if(len(row) > 0):
-            row["filename"] = sourcefile
-            data.append(row)
+            if(len(row) > 0):
+                row["filename"] = sourcefile
+                data.append(row)
     if(len(data) > 0):
         dbh.insert_many_indiv(tablename,columnlist,data)
+        return len(data)
+
 # end ingest_datafile_contents
 
 def getSectionsForFiletype(filetype,dbh):
@@ -82,29 +128,63 @@ def getSectionsForFiletype(filetype,dbh):
     return result
 # end getSectionsForFiletype
 
+def isInteger(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
+# end isInteger
+
 
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='Create ingest temp table')
+    parser.add_argument('--file',action='store')
+    parser.add_argument('--filetype',action='store')
+
+    args, unknown_args = parser.parse_known_args()
+    args = vars(args)
 
     fullname = None
     filetype = None
     dbh = None
 
-    if(len(sys.argv) > 1):
-        fullname = sys.argv[1]
-        filetype = sys.argv[2]
+    if args['file']:
+        fullname = args['file']
     else:
-        sys.stderr.write("Missing required parameters. Must include filename, filetype\n")
+        sys.stderr.write("Missing required parameter 'file'. Must include file and filetype\n")
+        exit(1)
+    if args['filetype']:
+        filetype = args['filetype']
+    else:
+        sys.stderr.write("Missing required parameter 'filetype'. Must include file and filetype\n")
         exit(1)
 
     try:
         print "datafile_ingest.py: Preparing to ingest " + fullname
         dbh = DesDbi()
+        mydict = None
         sectionsWanted = getSectionsForFiletype(filetype,dbh)
-        mydict = xmlslurp.xmlslurper(fullname,sectionsWanted).gettables()
+        if 'xml' in filetype:
+            mydict = xmlslurp.xmlslurper(fullname,sectionsWanted).gettables()
+        else:
+            if len(sectionsWanted) > 1:
+                sys.stderr.write("Database is calling for data from multiple sections, which is not yet supported\n")
+                exit(1)
+            hdu = None
+            if (isInteger(sectionsWanted[0])):
+                hdu = int(sectionsWanted[0])
+            else:
+                hdu = sectionsWanted[0]
+            hduList = pyfits.open(fullname)
+            mydict = {}
+            mydict[sectionsWanted[0]] = hduList[hdu].data
+
         filename = parse_fullname(fullname, CU_PARSE_FILENAME) 
-        ingest_datafile_contents(filename,filetype,mydict,dbh)
+        numrows = ingest_datafile_contents(filename,filetype,mydict,dbh)
         dbh.commit()
-        print "datafile_ingest.py: ingest of " + fullname + " complete"
+        print "datafile_ingest.py: ingest of " + fullname + ", %s rows, complete" % numrows
     finally:
         if dbh is not None:
             dbh.close()
