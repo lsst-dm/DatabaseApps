@@ -112,8 +112,8 @@ def ingest_datafile_contents(sourcefile,filetype,dataDict,dbh):
     if(len(data) > 0):
         dbh.insert_many_indiv(tablename,columnlist,data)
         return len(data)
-
 # end ingest_datafile_contents
+
 
 def getSectionsForFiletype(filetype,dbh):
     sqlstr = "select distinct hdu from OPS_DATAFILE_METADATA where filetype=%s"
@@ -128,6 +128,7 @@ def getSectionsForFiletype(filetype,dbh):
     return result
 # end getSectionsForFiletype
 
+
 def isInteger(s):
     try:
         int(s)
@@ -140,7 +141,7 @@ def isInteger(s):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Create ingest temp table')
-    parser.add_argument('--file',action='store')
+    parser.add_argument('--filename',action='store')
     parser.add_argument('--filetype',action='store')
 
     args, unknown_args = parser.parse_known_args()
@@ -150,15 +151,15 @@ if __name__ == '__main__':
     filetype = None
     dbh = None
 
-    if args['file']:
-        fullname = args['file']
+    if args['filename']:
+        fullname = args['filename']
     else:
-        sys.stderr.write("Missing required parameter 'file'. Must include file and filetype\n")
+        sys.stderr.write("Missing required parameter 'filename'. Must include filename and filetype\n")
         exit(1)
     if args['filetype']:
         filetype = args['filetype']
     else:
-        sys.stderr.write("Missing required parameter 'filetype'. Must include file and filetype\n")
+        sys.stderr.write("Missing required parameter 'filetype'. Must include filename and filetype\n")
         exit(1)
 
     try:
