@@ -26,8 +26,8 @@ def parseTableName(inname):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Merge objects into main table')
-    parser.add_argument('--temptable',action='store')
-    parser.add_argument('--targettable',action='store')
+    parser.add_argument('-temptable',action='store')
+    parser.add_argument('-targettable',action='store')
 
     args, unknown_args = parser.parse_known_args()
     args = vars(args)

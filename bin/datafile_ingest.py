@@ -141,8 +141,8 @@ def isInteger(s):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Create ingest temp table')
-    parser.add_argument('--filename',action='store')
-    parser.add_argument('--filetype',action='store')
+    parser.add_argument('-filename',action='store')
+    parser.add_argument('-filetype',action='store')
 
     args, unknown_args = parser.parse_known_args()
     args = vars(args)

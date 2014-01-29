@@ -240,11 +240,11 @@ if __name__ == '__main__':
     hduList = None
 
     parser = argparse.ArgumentParser(description='Ingest objects from a fits catalog')
-    parser.add_argument('--request',action='store')
-    parser.add_argument('--filename',action='store')
-    parser.add_argument('--filetype',action='store')
-    parser.add_argument('--temptable',action='store')
-    parser.add_argument('--targettable',action='store')
+    parser.add_argument('-request',action='store')
+    parser.add_argument('-filename',action='store')
+    parser.add_argument('-filetype',action='store')
+    parser.add_argument('-temptable',action='store')
+    parser.add_argument('-targettable',action='store')
 
     args, unknown_args = parser.parse_known_args()
     args = vars(args)

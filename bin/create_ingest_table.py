@@ -16,9 +16,9 @@ from coreutils import desdbi
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Create ingest temp table')
-    parser.add_argument('--temptable',action='store')
-    parser.add_argument('--targettable',action='store')
-    parser.add_argument('--request',action='store')
+    parser.add_argument('-temptable',action='store')
+    parser.add_argument('-targettable',action='store')
+    parser.add_argument('-request',action='store')
 
     args, unknown_args = parser.parse_known_args()
     args = vars(args)
