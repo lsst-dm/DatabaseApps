@@ -228,11 +228,30 @@ def getNumObjects(hduList):
     data = hduList["LDAC_OBJECTS"].data
     return len(data)
 
-def checkParam(args,param):
+def checkParam(args,param,required):
     if args[param]:
         return args[param]
     else:
-        sys.stderr.write("Missing required parameter: %s" % param)
+        if required:
+            sys.stderr.write("Missing required parameter: %s" % param)
+        else:
+            return None
+# end checkParam
+
+def createIngestTable(request,temptable,targettable):
+    tablespace = "DESSE_REQNUM%07d_T" % int(request)
+
+    try:
+        dbh = desdbi.DesDbi()
+        cursor = dbh.cursor()
+        print "Creating tablespace %s and table %s if they do not already exist" % (tablespace,temptable)
+        cursor.callproc("createObjectsTable",[temptable,tablespace,targettable])
+        cursor.close()
+        print "Temp table %s is ready" % temptable
+    finally:
+        if dbh:
+            dbh.close()
+
 
 
 if __name__ == '__main__':
@@ -249,11 +268,17 @@ if __name__ == '__main__':
     args, unknown_args = parser.parse_known_args()
     args = vars(args)
 
-    request = checkParam(args,'request')
-    filename = checkParam(args,'filename')
-    filetype = checkParam(args,'filetype')
-    temptable = checkParam(args,'temptable')
-    targettable = checkParam(args,'targettable')
+    request = checkParam(args,'request',True)
+    filename = checkParam(args,'filename',True)
+    filetype = checkParam(args,'filetype',True)
+    temptable = checkParam(args,'temptable',False)
+    targettable = checkParam(args,'targettable',True)
+
+    if not temptable:
+        temptable = "DESSE_REQNUM%07d" % int(request)
+        arr = targettable.split('.')
+        if len(arr)>1:
+            temptable = arr[0] + '.' + temptable
 
     print("Preparing to load " + filename + " of type " + filetype + " into " + temptable)
 
@@ -274,7 +299,8 @@ if __name__ == '__main__':
                 errstr = "ERROR: file " + filename + " already ingested, but the number of objects is DIFFERENT: catalog=" + str(numCatObjects) + "; DB=" + str(numDbObjects) + ", Original reqnum=" + str(dbReqnum)
                 raise Exception(errstr)
                 exit(1)
-
+        
+        createIngestTable(request, temptable, targettable)
         catalogIngest(hduList, constVals, temptable, filetype)
     
         print("catalogIngest load of " + str(numCatObjects) + " objects from " + filename + " completed")

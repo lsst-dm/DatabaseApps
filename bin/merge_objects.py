@@ -26,6 +26,7 @@ def parseTableName(inname):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Merge objects into main table')
+    parser.add_argument('-request',action='store')
     parser.add_argument('-temptable',action='store')
     parser.add_argument('-targettable',action='store')
 
@@ -35,16 +36,26 @@ if __name__ == '__main__':
     errors = []
     if args['targettable'] == None:
         errors.append("targettable is required")
-    if args['temptable'] == None:
-        errors.append("temptable is required")
+    if args['temptable'] == None and args['request'] == None:
+        errors.append("either temptable or request is required")
     if len(errors) > 0:
         sys.stderr.write("ERROR: " + "; ".join(errors) + "\n")
         exit(1)
 
     targetschema, targettable = parseTableName(args['targettable'])
-    tempschema, temptable = parseTableName(args['temptable'])
+    temptable = args['temptable']
+    tempschema = None
 
-    print "Merging %s into %s..." % (args['temptable'], args['targettable'])
+    if temptable == None:
+        temptable = "DESSE_REQNUM%07d" % int(args['request'])
+        tempschema = targetschema
+    else:
+        tempschema, temptable = parseTableName(args['temptable'])
+
+    if tempschema:
+        print "Merging %s into %s..." % (tempschema + '.' + temptable, args['targettable'])
+    else:
+        print "Merging %s into %s..." % (temptable, args['targettable'])
 
     dbh = desdbi.DesDbi()
     cursor = dbh.cursor()
