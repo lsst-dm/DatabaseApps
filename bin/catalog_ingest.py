@@ -204,6 +204,7 @@ def getShortFilename(longname):
 
 
 def numAlreadyIngested(filename,tablename):
+    dbh = None
     try:
         dbh = desdbi.DesDbi()
         results = OrderedDict()
@@ -217,7 +218,8 @@ def numAlreadyIngested(filename,tablename):
         cursor.execute(sqlstr % tablename,{"fname":filename})
         records = cursor.fetchall()
     finally:
-        dbh.close()
+        if dbh:
+            dbh.close()
     if(len(records) > 0):
         return records[0]
     else:
@@ -240,7 +242,7 @@ def checkParam(args,param,required):
 
 def createIngestTable(request,temptable,targettable):
     tablespace = "DESSE_REQNUM%07d_T" % int(request)
-
+    dbh = None
     try:
         dbh = desdbi.DesDbi()
         cursor = dbh.cursor()
