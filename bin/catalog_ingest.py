@@ -205,15 +205,17 @@ def getShortFilename(longname):
 
 def numAlreadyIngested(filename,tablename):
     dbh = None
+    return [0,0]
+    '''
     try:
         dbh = desdbi.DesDbi()
         results = OrderedDict()
-        sqlstr = '''
+        sqlstr =
         select count(*), reqnum 
         from %s
         where filename=:fname
         group by reqnum
-        '''
+        
         cursor = dbh.cursor()
         cursor.execute(sqlstr % tablename,{"fname":filename})
         records = cursor.fetchall()
@@ -224,7 +226,7 @@ def numAlreadyIngested(filename,tablename):
         return records[0]
     else:
         return [0,0]
-
+    '''
 
 def getNumObjects(hduList):
     data = hduList["LDAC_OBJECTS"].data
