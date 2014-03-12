@@ -144,6 +144,8 @@ def catalogIngest(hduList,constDict,tablename,filetype):
     sqlldr_command.append("control=" + controlfilename)
     sqlldr_command.append("bad=" + badrowsfile)
     sqlldr_command.append("discard=" + discardfile)
+    sqlldr_command.append("DIRECT=true")
+    sqlldr_command.append("parallel=true")
     sqlldr_command.append("silent=header,feedback,partitions")
 
     dbdata = getObjectColumns(filetype)
