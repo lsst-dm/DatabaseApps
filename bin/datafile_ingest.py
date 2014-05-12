@@ -38,15 +38,15 @@ def printNode(indict, level, filehandle):
 
 def ingest_datafile_contents(sourcefile,filetype,dataDict,dbh):
     [tablename, metadata] = dbh.get_datafile_metadata(filetype)
+
+    if(isIngested(sourcefile, tablename,dbh)):
+        print "INFO: file " + filename + " is already ingested\n"
+        exit(0)
+
     print "datafile_ingest.py: destination table=" + tablename
-    #printNode(metadata,0,sys.stdout)
+
     columnlist = []
     data = []
-    indata = []
-    if hasattr(dataDict,"keys"):
-        indata.append(dataDict)
-    else:
-        indata=dataDict
 
     dateformat = None
 
@@ -74,8 +74,10 @@ def ingest_datafile_contents(sourcefile,filetype,dataDict,dbh):
             indata.append(attrDict)
         else:
             indata=attrDict
+        rownum = 0
         for inrow in indata:
             row = {}
+            rownum = rownum+1
             for attribute,coldata in metadata[hdu].iteritems():
                 for indx, colname in enumerate(coldata[DI_COLUMNS]):
                     attr = None
@@ -87,7 +89,7 @@ def ingest_datafile_contents(sourcefile,filetype,dataDict,dbh):
                             if k.lower() == attribute.lower():
                                 attr = inrow.field(k)
                                 break
-                    if attr:
+                    if attr or coldata[DI_DATATYPE] == 'rnum':
                         if type(attr) is list:
                             if indx < len(attr):
                                 row[colname] = attr[indx]
@@ -99,6 +101,8 @@ def ingest_datafile_contents(sourcefile,filetype,dataDict,dbh):
                                     row[colname] = int(attr)
                                 elif coldata[DI_DATATYPE] == 'float':
                                     row[colname] = float(attr)
+                                elif coldata[DI_DATATYPE] == 'rnum':
+                                    row[colname] = rownum
                                 else:
                                     row[colname] = attr
                             else:
@@ -137,6 +141,19 @@ def isInteger(s):
 # end isInteger
 
 
+def isIngested(filename,tablename,dbh):
+    sqlstr = "select 1 from dual where exists(select * from %s where filename=%s)" 
+    sqlstr = sqlstr % (tablename, dbh.get_named_bind_string('fname'));
+
+    found = False    
+    curs = dbh.cursor()
+    curs.execute(sqlstr,{"fname":filename})
+    for row in curs:
+        found = True
+    curs.close()
+    return found
+
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Create ingest temp table')
@@ -164,6 +181,7 @@ if __name__ == '__main__':
     try:
         print "datafile_ingest.py: Preparing to ingest " + fullname
         dbh = DesDbi()
+
         mydict = None
         sectionsWanted = getSectionsForFiletype(filetype,dbh)
         if 'xml' in filetype:
@@ -181,7 +199,7 @@ if __name__ == '__main__':
             mydict = {}
             mydict[sectionsWanted[0]] = hduList[hdu].data
 
-        filename = parse_fullname(fullname, CU_PARSE_FILENAME) 
+        filename = parse_fullname(fullname, CU_PARSE_FILENAME)
         numrows = ingest_datafile_contents(filename,filetype,mydict,dbh)
         dbh.commit()
         print "datafile_ingest.py: ingest of " + fullname + ", %s rows, complete" % numrows
