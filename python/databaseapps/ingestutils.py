@@ -5,6 +5,7 @@ import calendar
 
 class IngestUtils:
 
+    @staticmethod
     def getShortFilename(longname):
         shortname = None
         if '/' in longname:
@@ -15,6 +16,7 @@ class IngestUtils:
         return shortname.strip()
     # end getShortFilename
 
+    @staticmethod
     def isInteger(s):
         try:
             int(s)
@@ -23,6 +25,7 @@ class IngestUtils:
             return False
     # end isInteger
 
+    @staticmethod
     def func_getnite(dateobs):
         v = dateobs.split(':')
         hh = int(v[0].split('-')[2][-2:])
@@ -42,6 +45,7 @@ class IngestUtils:
         return nite
     # end func_getnite
 
+    @staticmethod
     def func_getband(filter):
         band = filter[0]
         if band not in ['u','g','r','i','z','Y']:
@@ -49,6 +53,7 @@ class IngestUtils:
         return band
     # end func_getband
 
+    @staticmethod
     def resolveDbObject(objectname, dbh):
         ''' given an object name and an open DB handle, this routine returns
             the schema that owns the object and the object name
@@ -69,9 +74,9 @@ class IngestUtils:
                 UNION
                 select table_owner, synonym_name, 3 from all_synonyms where owner='PUBLIC' and synonym_name=:obj
                 order by 3 '''
-            cursor = dbh->cursor()
+            cursor = dbh.cursor()
             res = cursor.execute(sqlstmt,{'obj':objectname})
-            if res and len(res) > 0:
+            if res:
                 schema = res[0][0]
                 obname = res[0][1]
             cursor.close()

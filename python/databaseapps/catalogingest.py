@@ -15,7 +15,7 @@ import time
 from collections import OrderedDict
 from coreutils import desdbi
 from coreutils import serviceaccess
-from databaseapps import ingestutils
+from databaseapps.ingestutils import IngestUtils as ingestutils
 import argparse
 
 
@@ -51,20 +51,26 @@ class CatalogIngest:
     funcDict = None
     dbDict = None
     fits = None
-
+    debug = True
+    debugDateFormat = '%Y-%m-%d %H:%M:%S'
 
     def __init__(self, request, filetype, datafile, temptable, 
                     targettable, fitsheader, mode, outputfile):
         
+        self.debug("start CatalogIngest.init()")
         self.dbh = desdbi.DesDbi()
+
+        self.debug("opening fits file")
         self.fits = fitsio.FITS(datafile)
+        self.debug("fits file opened")
+
         self.request = request
         self.filetype = filetype
         self.fullfilename = datafile
-        self.shortfilename = getShortFilename(datafile)
+        self.shortfilename = ingestutils.getShortFilename(datafile)
 
         if fitsheader:
-            if isInteger(fitsheader):
+            if ingestutils.isInteger(fitsheader):
                 self.objhdu = int(fitsheader)
             else:
                 self.objhdu = fitsheader
@@ -73,19 +79,24 @@ class CatalogIngest:
         if outputfile:
             self.outputfile = outputfile
 
+        self.debug("start resolveDbObject() for target: %s" % targettable)
         (self.targetschema,self.targettable) = ingestutils.resolveDbObject(targettable,self.dbh)
         if not temptable:
             self.temptable = "DESSE_REQNUM%07d" % int(request)
             self.tempschema = self.targetschema
         else:
+            self.debug("start resolveDbObject() for temp: %s" % temptable)
             (self.tempschema,self.temptable) = ingestutils.resolveDbObject(temptable,self.dbh)
+        self.debug("target schema,table = %s, %s; temp= %s, %s" % 
+                (self.targetschema,self.targettable,self.tempschema,self.temptable))
 
         self.constDict = {
-            "FILENAME":[getShortFilename(filename),True], 
+            "FILENAME":[self.shortfilename,True], 
             "REQNUM":[request,False]
             }
-
+        self.debug("start getObjectColumns()")
         self.dbDict = self.getObjectColumns()
+        self.debug("CatalogIngest.init() done")
 
     def __del__(self):
         if self.dbh:
@@ -93,6 +104,12 @@ class CatalogIngest:
         if self.fits:
             self.fits.close()
 
+    def debug(self, msg):
+        if self.debug:
+            print time.strftime(self.debugDateFormat) + " - " + msg
+
+    def info(self, msg):
+        print time.strftime(self.debugDateFormat) + " - " + msg
 
     def getObjectColumns(self):
         results = OrderedDict()
@@ -108,6 +125,7 @@ class CatalogIngest:
                 and atc.table_name=:tabname
                 and atc.owner=:ownname
                 and dm.filetype=:ftype
+                and dm.current_flag=1
             order by 1,2,3 '''
         cursor = self.dbh.cursor()
         params = {
@@ -119,10 +137,10 @@ class CatalogIngest:
         records = cursor.fetchall()
         for rec in records:
             hdr = None
-            if rec[0].upper() = 'PRIMARY':
+            if rec[0].upper() == 'PRIMARY':
                 hdr = 0
             else:
-                if isInteger(rec[0]):
+                if ingestutils.isInteger(rec[0]):
                     hdr = int(rec[0])
                 else:
                     hdr = rec[0]
@@ -142,26 +160,35 @@ class CatalogIngest:
         quoteit = None
         hdr = self.fits[hduName].read_header()
         
-        for attribute, dblist in self.dbDict[str(hduName)].iteritems():
-            for col in dblist[COLUMN_NAME]:
-                if dblist[DERIVED] == 'c':
+        for attribute, dblist in self.dbDict[hduName].iteritems():
+            for col in dblist[self.COLUMN_NAME]:
+                if dblist[self.DERIVED] == 'c':
                     value = self.funcDict[col](hdr[attribute])
-                elif dblist[DERIVED] == 'h':
-                    value = hdr[attribute]
-                if dblist[DATATYPE] == 'char':
+                elif dblist[self.DERIVED] == 'h':
+                    value = str(hdr[attribute]).strip()
+                if dblist[self.DATATYPE] == 'char':
                     quoteit = True
                 else:
                     quoteit = False
                 self.constDict[col] = [value,quoteit]
 
+    def loadingTarget(self):
+        if self.targettable == self.temptable and self.targetschema == self.tempschema:
+            return True
+        else:
+            return False
 
     def writeControlfileHeader(self,controlfile):
-        controlfile.write('UNRECOVERABLE\nLOAD DATA\n')
-        if self.MODE == self.SQLLDR:
+        if not self.loadingTarget():
+            controlfile.write('UNRECOVERABLE\n')
+        controlfile.write('LOAD DATA\n')
+        if self.mode == self.SQLLDR:
             controlfile.write('INFILE "-"\n')
-        elif self.MODE == self.FILE:
-            controlfile.write('INFILE "' + self.OUTPUTFILE + '"\n')
-        controlfile.write("INTO TABLE " + tablename + "\nAPPEND\nFIELDS TERMINATED BY ','\n(\n")
+        elif self.mode == self.FILE:
+            controlfile.write('INFILE "' + self.outputfile + '"\n')
+        schtbl = self.tempschema + '.' + self.temptable
+        controlfile.write("INTO TABLE " + schtbl + "\nAPPEND\n" +
+            "FIELDS TERMINATED BY ','\n(\n")
         for colname, val in self.constDict.iteritems():
             if val[self.QUOTE]:
                 controlfile.write(colname + " CONSTANT '" + val[self.VALUE] + "',\n")
@@ -185,26 +212,26 @@ class CatalogIngest:
         return [colsizes, coltypes]
 
 
-    def writeControlFile(self):
+    def createControlFile(self):
         controlfile = file(self.controlfilename, 'w')
-        for hduName in self.dbData.keys():
+        for hduName in self.dbDict.keys():
             if hduName not in [self.objhdu,'WCL']:
-                getConstValuesFromHeader(hduName)
-        writeControlfileHeader(controlfile)
-        dbobjdata = self.dbData[self.objhdu]
+                self.getConstValuesFromHeader(hduName)
+        self.writeControlfileHeader(controlfile)
+        dbobjdata = self.dbDict[self.objhdu]
         orderedFitsColumns = self.fits[self.objhdu].get_colnames()
         filerows = []
         for headerName in orderedFitsColumns:
-            if headerName.lower() in dbobjdata.keys():
-                for colname in dbobjdata[headerName.lower()][self.COLUMN_NAME]:
+            if headerName.upper() in dbobjdata.keys():
+                for colname in dbobjdata[headerName.upper()][self.COLUMN_NAME]:
                     row = []
-                    row.append[colname]
-                    row.append[dbobjdata[headerName.lower()][self.DATATYPE]
+                    row.append(colname)
+                    row.append(dbobjdata[headerName.upper()][self.DATATYPE])
                     filerows.append(" ".join(row))
         controlfile.write(",\n".join(filerows))
-        writeControlfileFooter(controlfile)
+        self.writeControlfileFooter(controlfile)
         controlfile.close()
-        print("sqlldr control file " + self.controlfilename + " created")
+        self.info("sqlldr control file " + self.controlfilename + " created")
 
 
     def getSqlldrCommand(self):
@@ -216,8 +243,9 @@ class CatalogIngest:
         sqlldr_command.append("control=" + self.controlfilename)
         sqlldr_command.append("bad=" + self.badrowsfile)
         sqlldr_command.append("discard=" + self.discardfile)
-        sqlldr_command.append("DIRECT=true")
-        sqlldr_command.append("parallel=true")
+        if not self.loadingTarget():
+            sqlldr_command.append("parallel=true")
+            sqlldr_command.append("DIRECT=true")
         sqlldr_command.append("silent=header,feedback,partitions")
         return sqlldr_command
 
@@ -225,34 +253,33 @@ class CatalogIngest:
     def execute(self,firstrow=1,lastrow=-1):
         if lastrow == -1:
             lastrow = self.fits[self.objhdu].get_nrows()
-        attrsToCollect = self.dbData[self.objhdu]
+        attrsToCollect = self.dbDict[self.objhdu]
         sqlldr = None
         outfile = None
         try:
-            if self.MODE == self.SQLLDR:
-                print("invoking sqlldr with control file " + self.controlfilename)
-                sqlldr_command = getSqlldrCommand()
+            if self.mode == self.SQLLDR:
+                self.info("invoking sqlldr with control file " + self.controlfilename)
+                sqlldr_command = self.getSqlldrCommand()
                 sqlldr = subprocess.Popen(sqlldr_command,shell=False,stdin=subprocess.PIPE)
-            elif self.MODE == self.FILE:
+            elif self.mode == self.FILE:
                 outfile = open(self.outputfile,'w')
 
             attrs = attrsToCollect.keys()
             orderedFitsColumns = []
             allcols = self.fits[self.objhdu].get_colnames()
             for col in allcols:
-                if col.lower() in attrs:
+                if col.upper() in attrs:
                     orderedFitsColumns.append(col)
             datatypes = self.fits[self.objhdu].get_rec_dtype()[0]
-
             startrow = firstrow-1
             endrow = firstrow-1
             while endrow < lastrow:
                 startrow = endrow
-                endrow = min(startrow+1000, lastrow)
+                endrow = min(startrow+10000, lastrow)
                 data = fitsio.read(
                         self.fullfilename,
                         rows=range(startrow,endrow),
-                        columns=attrs,ext=objhdu
+                        columns=orderedFitsColumns,ext=self.objhdu
                         )
                 for row in data:
                     outrow = []
@@ -260,22 +287,24 @@ class CatalogIngest:
                         # if this column is an array of values
                         if datatypes[orderedFitsColumns[idx].upper()].subdtype:
                             arrvals = []
+                            #print "col=" + orderedFitsColumns[idx] + " :: type=" + str(type(row[idx])) + "::" + str(row[idx])
+                            #allvals = row[idx].tolist()
                             for pos in attrsToCollect[orderedFitsColumns[idx]][self.POSITION]:
-                                arrvals.append(str(row[idx][pos]).strip())
+                                arrvals.append(str(row[idx][int(pos)]).strip())
                             outrow.append(','.join(arrvals))
                         # else it is a scalar
                         else:
                             outrow.append(str(row[idx]))
                     # if sqlldr subprocess is still alive, write to it
                     if sqlldr and sqlldr.poll() == None:
-                        sqlldr.stdin.write(",".join(dbrow) + "\n")
+                        sqlldr.stdin.write(",".join(outrow) + "\n")
                     # else if we are writing to a file
                     elif outfile:
-                        outfile.write(",".join(dbrow) + "\n")
+                        outfile.write(",".join(outrow) + "\n")
                     # otherwise some error occurred
                     else:
-                        exit("sqlldr or file writing exited with errors. See " + logfile + 
-                             ", " + discardfile + " and " + badrowsfile + " for details")
+                        exit("sqlldr or file writing exited with errors. See " + self.logfile + 
+                             ", " + self.discardfile + " and " + self.badrowsfile + " for details")
                 # end for row in data
             # end while endrow < lastrow
         finally:
@@ -285,31 +314,32 @@ class CatalogIngest:
                 outfile.close()
    
         if sqlldr and sqlldr.wait():
-            exit("sqlldr exited with errors. See " + logfile + ", " + discardfile + 
-                 " and " + badrowsfile + " for details")
+            exit("sqlldr exited with errors. See " + self.logfile + ", " + self.discardfile + 
+                 " and " + self.badrowsfile + " for details")
         else:
-            if os.path.exists(controlfilename) and self.MODE=='sqlldr':
-                os.remove(controlfilename)
-            if os.path.exists(logfile):
-                os.remove(logfile)
-            if os.path.exists(badrowsfile):
-                os.remove(badrowsfile)
-            if os.path.exists(discardfile):
-                os.remove(discardfile)
+            if os.path.exists(self.controlfilename) and self.mode==self.SQLLDR:
+                os.remove(self.controlfilename)
+            if os.path.exists(self.logfile):
+                os.remove(self.logfile)
+            if os.path.exists(self.badrowsfile):
+                os.remove(self.badrowsfile)
+            if os.path.exists(self.discardfile):
+                os.remove(self.discardfile)
 
 
     def numAlreadyIngested(self):
-        try:
-            results = OrderedDict()
-            sqlstr = '''
+        results = OrderedDict()
+        sqlstr = '''
             select count(*), reqnum 
             from %s
             where filename=:fname
             group by reqnum
             '''
-            cursor = self.dbh.cursor()
-            cursor.execute(sqlstr % tablename,{"fname":self.shortfilename})
-            records = cursor.fetchall()
+        cursor = self.dbh.cursor()
+        schtbl = self.targetschema + '.' + self.targettable
+        cursor.execute(sqlstr % schtbl,{"fname":self.shortfilename})
+        records = cursor.fetchall()
+        
         if(len(records) > 0):
             return records[0]
         else:
@@ -319,37 +349,44 @@ class CatalogIngest:
     def getNumObjects(self):
         return self.fits[self.objhdu].get_nrows()
 
+    def getOutputFilename(self):
+        return self.outputfile
 
     def createIngestTable(self):
-        tablespace = "DESSE_REQNUM%07d_T" % int(request)
-        try:
-            cursor = self.dbh.cursor()
-            print ("Creating tablespace %s and table %s if they do not already exist"
-                     % (tablespace,temptable))
-            cursor.callproc("createObjectsTable",[temptable,tablespace,targettable])
-            cursor.close()
-            print "Temp table %s is ready" % temptable
+        tablespace = "DESSE_REQNUM%07d_T" % int(self.request)
+        
+        cursor = self.dbh.cursor()
+        self.info("Creating tablespace %s and table %s.%s if they do not already exist"
+                 % (tablespace,self.tempschema,self.temptable))
+        cursor.callproc("createObjectsTable",
+            [self.temptable,tablespace,self.targettable])
+        cursor.close()
+        self.info("Temp table %s.%s is ready" % (self.tempschema,self.temptable))
 
 
     def isLoaded(self):
-        (numDbObjects,dbReqnum) = numAlreadyIngested()
+        self.debug("starting isLoaded()")
+        self.debug("starting numAlreadyIngested()")
+        (numDbObjects,dbReqnum) = self.numAlreadyIngested()
+        self.debug("starting getNumObjects()")
         numCatObjects = self.getNumObjects()
         exitcode = 0
         loaded = False
         if numDbObjects > 0:
             loaded = True
             if numDbObjects == numCatObjects:
-                print ("WARNING: file " + fullfilename + " already ingested " +
+                self.info("WARNING: file " + self.fullfilename + " already ingested " +
                         "with the same number of objects. " +
                         "Original reqnum=" + str(dbReqnum) + ". Aborting new ingest")
                 exitcode = 0
             else:
-                errstr = ("ERROR: file " + fullfilename + " already ingested, but " +
+                errstr = ("ERROR: file " + self.fullfilename + " already ingested, but " +
                         "the number of objects is DIFFERENT: catalog=" + 
                         str(numCatObjects) + "; DB=" + str(numDbObjects) + 
                         ", Original reqnum=" + str(dbReqnum))
                 raise Exception(errstr)
                 exitcode = 1
+        self.debug("finished isLoaded()")
         return (loaded,exitcode)
 
 

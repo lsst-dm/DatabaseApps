@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
 from coreutils.desdbi import DesDbi
-from coreutils.miscutils import *
-import intgutils.wclutils as wclutils
 import sys, os
 from collections import OrderedDict
 import xmlslurp
