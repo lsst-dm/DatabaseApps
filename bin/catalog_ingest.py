@@ -11,7 +11,7 @@ import os
 import sys
 import time
 import argparse
-from databaseapps.catalogingest import CatalogIngest as CatalogIngest
+from databaseapps.objectcatalog import ObjectCatalog as ObjectCatalog
 
 
 def checkParam(args,param,required):
@@ -25,7 +25,7 @@ def checkParam(args,param,required):
 # end checkParam
 
 def printinfo(msg):
-        print time.strftime(CatalogIngest.debugDateFormat) + " - " + msg
+        print time.strftime(ObjectCatalog.debugDateFormat) + " - " + msg
 
 if __name__ == '__main__':
     
@@ -40,7 +40,9 @@ if __name__ == '__main__':
     parser.add_argument('-fitsheader',action='store')
     parser.add_argument('-mode',action='store')
     parser.add_argument('-outputfile',action='store')
-    
+    parser.add_argument('-dump',action='store')
+    parser.add_argument('-keepfiles',action='store')
+
     args, unknown_args = parser.parse_known_args()
     args = vars(args)
     
@@ -52,9 +54,13 @@ if __name__ == '__main__':
     fitsheader = checkParam(args,'fitsheader',False)
     outputfile = checkParam(args,'outputfile',False)
     mode = checkParam(args,'mode',False)
+    dump = checkParam(args,'dump',False)
+    keepfiles = checkParam(args,'keepfiles',False)
     
+    if request==None or filename==None or filetype==None or targettable==None:
+        exit(1)
     
-    catingest = CatalogIngest(
+    objectcat = ObjectCatalog(
                         request=request,
                         filetype=filetype,
                         datafile=filename,
@@ -62,20 +68,23 @@ if __name__ == '__main__':
                         targettable=targettable,
                         fitsheader=fitsheader,
                         mode=mode,
-                        outputfile=outputfile
+                        outputfile=outputfile,
+                        dumponly=dump,
+                        keepfiles=keepfiles
                     )
     if mode == None or mode == 'sqlldr':
-        (isloaded,code) = catingest.isLoaded()
+        (isloaded,code) = objectcat.isLoaded()
         if isloaded:
             exit(code)
         
         printinfo("Preparing to load " + filename + " of type " + filetype +
-            " into " + catingest.tempschema + '.' + catingest.temptable)
+            " into " + objectcat.tempschema + '.' + objectcat.temptable)
     else:
         printinfo("Preparing to dump " + filename + " of type " + filetype +
-            " into file " + catingest.getOutputFilename())
-    catingest.createControlFile()
-    catingest.createIngestTable()
-    catingest.execute()
+            " into file " + objectcat.getOutputFilename())
+    objectcat.createControlFile()
+    objectcat.createIngestTable()
+    objectcat.executeIngest()
         
-    printinfo("catalogIngest load of " + str(catingest.getNumObjects()) + " objects from " + filename + " completed")
+    printinfo("catalogIngest load of " + str(objectcat.getNumObjects()) + " objects from " + filename + " completed")
+
