@@ -36,6 +36,6 @@ __all__ = ['CatalogIngest', 'Xmlslurper','IngestUtils']
 # Make the main class and all the error classes available directly within
 # the package to simplify imports for package users.
 
-from .catalogingest import CatalogIngest
+from .objectcatalog import ObjectCatalog
 from .xmlslurp import Xmlslurper
 from .ingestutils import IngestUtils

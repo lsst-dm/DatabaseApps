@@ -76,9 +76,10 @@ class IngestUtils:
                 order by 3 '''
             cursor = dbh.cursor()
             res = cursor.execute(sqlstmt,{'obj':objectname})
-            if res:
-                schema = res[0][0]
-                obname = res[0][1]
+            for rec in res:
+                schema = rec[0]
+                obname = rec[1]
+                break
             cursor.close()
         return (schema,obname)
 
