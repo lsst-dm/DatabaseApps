@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from coreutils.desdbi import DesDbi
+import coreutils.miscutils as miscutils
 import sys, os
 from collections import OrderedDict
 import xmlslurp
@@ -37,6 +38,9 @@ def printNode(indict, level, filehandle):
 
 def ingest_datafile_contents(sourcefile,filetype,dataDict,dbh):
     [tablename, metadata] = dbh.get_datafile_metadata(filetype)
+    if tablename == None or metadata == None:
+        sys.stderr.write("ERROR: no metadata in database for filetype=%s. Check OPS_DATAFILE_TABLE and OPS_DATAFILE_METADATA\n" % filetype)
+        exit(1)
     print "datafile_ingest.py: destination table=" + tablename
     #printNode(metadata,0,sys.stdout)
     columnlist = []
@@ -180,7 +184,7 @@ if __name__ == '__main__':
             mydict = {}
             mydict[sectionsWanted[0]] = hduList[hdu].data
 
-        filename = parse_fullname(fullname, CU_PARSE_FILENAME) 
+        filename = miscutils.parse_fullname(fullname, miscutils.CU_PARSE_FILENAME) 
         numrows = ingest_datafile_contents(filename,filetype,mydict,dbh)
         dbh.commit()
         print "datafile_ingest.py: ingest of " + fullname + ", %s rows, complete" % numrows
