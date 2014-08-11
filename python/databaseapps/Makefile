@@ -7,7 +7,7 @@
 # set to /usr/local, but that's not reasonable for this package.
 prefix=
 
-pydir=$(prefix)/python
+pydir=$(prefix)/python/databaseapps
 
 SHELL=/bin/sh
 
@@ -23,7 +23,7 @@ all:
 	for d in $(dirs) ; do $(MAKE) -C $$d $@ ; done
 
 install:
-	@if [ "$(pydir)" = "/python" ]; then \
+	@if [ "$(pydir)" = "/python/databaseapps" ]; then \
 	    echo "DatabaseApps: usage: make prefix=<install_dir> install"; \
 	    false; \
 	fi #$(MAKE) -- Do this test even with make -n
@@ -34,7 +34,7 @@ install:
 
 uninstall:
 	for d in $(dirs) ; do $(MAKE) prefix=$(prefix) -C $$d $@ ; done
-	@if [ "$(pydir)" = "/python" ]; then \
+	@if [ "$(pydir)" = "/python/databaseapps" ]; then \
 	    echo "DatabaseApps: usage: make prefix=<install_dir> uninstall"; \
 	    false; \
 	fi #$(MAKE) -- Do this test even with make -n
