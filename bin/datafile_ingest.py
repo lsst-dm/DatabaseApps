@@ -4,7 +4,7 @@ from coreutils.desdbi import DesDbi
 import coreutils.miscutils as miscutils
 import sys, os
 from collections import OrderedDict
-import xmlslurp
+from databaseapps.xmlslurp import Xmlslurper
 import pyfits
 import argparse
 
@@ -170,7 +170,7 @@ if __name__ == '__main__':
         mydict = None
         sectionsWanted = getSectionsForFiletype(filetype,dbh)
         if 'xml' in filetype:
-            mydict = xmlslurp.xmlslurper(fullname,sectionsWanted).gettables()
+            mydict = Xmlslurper(fullname,sectionsWanted).gettables()
         else:
             if len(sectionsWanted) > 1:
                 sys.stderr.write("Database is calling for data from multiple sections, which is not yet supported\n")
