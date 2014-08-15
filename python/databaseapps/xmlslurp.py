@@ -1,6 +1,6 @@
 import xml.parsers.expat
 
-class xmlslurper:
+class Xmlslurper:
 
     def __init__(self, filename, tablenames):
         
@@ -100,4 +100,4 @@ if __name__ == "__main__":
     pp = pprint.PrettyPrinter(indent=4)
     for f in glob.glob('*.xml'):
         print "f: ", f
-        pp.pprint(xmlslurper(f,tablelist).gettables())
+        pp.pprint(Xmlslurper(f,tablelist).gettables())
