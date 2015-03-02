@@ -14,8 +14,8 @@ import subprocess
 import time
 import re
 from collections import OrderedDict
-from coreutils import desdbi
-from coreutils import serviceaccess
+from despydb import desdbi
+from despyserviceaccess import serviceaccess
 from databaseapps.ingestutils import IngestUtils as ingestutils
 import argparse
 
@@ -280,8 +280,9 @@ class ObjectCatalog:
         sqlldr_command.append("bad=" + self.badrowsfile)
         sqlldr_command.append("discard=" + self.discardfile)
         if self.dump or not self.loadingTarget():
-            sqlldr_command.append("parallel=true")
+            sqlldr_command.append("parallel=false")
             sqlldr_command.append("DIRECT=true")
+            #sqlldr_command.append("rows=10000")
         sqlldr_command.append("silent=header,feedback,partitions")
         return sqlldr_command
 

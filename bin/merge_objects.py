@@ -10,7 +10,7 @@ __version__ = "$Rev: 11430 $"
 import os
 import sys
 import argparse
-from coreutils import desdbi
+from despydb import desdbi
 
 def parseTableName(inname):
     tablename = None

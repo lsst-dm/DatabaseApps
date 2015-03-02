@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from coreutils.desdbi import DesDbi
-import coreutils.miscutils as miscutils
+from despydmdb.desdmdbi import DesDmDbi
+import despymisc.miscutils as miscutils
 import sys, os
 from collections import OrderedDict
 from databaseapps.xmlslurp import Xmlslurper
@@ -166,7 +166,7 @@ if __name__ == '__main__':
 
     try:
         print "datafile_ingest.py: Preparing to ingest " + fullname
-        dbh = DesDbi()
+        dbh = DesDmDbi()
         mydict = None
         sectionsWanted = getSectionsForFiletype(filetype,dbh)
         if 'xml' in filetype:
