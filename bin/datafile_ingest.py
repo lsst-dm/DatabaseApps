@@ -6,6 +6,7 @@ import sys, os
 from collections import OrderedDict
 from databaseapps.xmlslurp import Xmlslurper
 import pyfits
+import numpy
 import argparse
 
 
@@ -38,10 +39,16 @@ def printNode(indict, level, filehandle):
 
 def ingest_datafile_contents(sourcefile,filetype,dataDict,dbh):
     [tablename, metadata] = dbh.get_datafile_metadata(filetype)
+
     if tablename == None or metadata == None:
         sys.stderr.write("ERROR: no metadata in database for filetype=%s. Check OPS_DATAFILE_TABLE and OPS_DATAFILE_METADATA\n" % filetype)
         exit(1)
-    print "datafile_ingest.py: destination table=" + tablename
+
+    if (isIngested(sourcefile, tablename, dbh)):
+        print "INFO: file " + filename + " is already ingested\n"
+        exit(0)
+
+    print "datafile_ingest.py: destination table = " + tablename
     #printNode(metadata,0,sys.stdout)
     columnlist = []
     data = []
@@ -50,6 +57,7 @@ def ingest_datafile_contents(sourcefile,filetype,dataDict,dbh):
         indata.append(dataDict)
     else:
         indata=dataDict
+
 
     dateformat = None
 
@@ -77,8 +85,11 @@ def ingest_datafile_contents(sourcefile,filetype,dataDict,dbh):
             indata.append(attrDict)
         else:
             indata=attrDict
+
+        rownum = 0  # counter used for rnum column
         for inrow in indata:
             row = {}
+            rownum += 1
             for attribute,coldata in metadata[hdu].iteritems():
                 for indx, colname in enumerate(coldata[DI_COLUMNS]):
                     attr = None
@@ -90,7 +101,9 @@ def ingest_datafile_contents(sourcefile,filetype,dataDict,dbh):
                             if k.lower() == attribute.lower():
                                 attr = inrow.field(k)
                                 break
-                    if attr:
+                    if attr is not None or coldata[DI_DATATYPE] == 'rnum':
+                        if isinstance(attr, numpy.ndarray):
+                            attr = attr.reshape(-1).tolist()
                         if type(attr) is list:
                             if indx < len(attr):
                                 row[colname] = attr[indx]
@@ -102,6 +115,8 @@ def ingest_datafile_contents(sourcefile,filetype,dataDict,dbh):
                                     row[colname] = int(attr)
                                 elif coldata[DI_DATATYPE] == 'float':
                                     row[colname] = float(attr)
+                                elif coldata[DI_DATATYPE] == 'rnum':
+                                    row[colname] = rownum 
                                 else:
                                     row[colname] = attr
                             else:
@@ -115,6 +130,7 @@ def ingest_datafile_contents(sourcefile,filetype,dataDict,dbh):
         dbh.insert_many_indiv(tablename,columnlist,data)
         return len(data)
 # end ingest_datafile_contents
+
 
 
 def getSectionsForFiletype(filetype,dbh):
@@ -139,12 +155,24 @@ def isInteger(s):
         return False
 # end isInteger
 
+def isIngested(filename,tablename,dbh):
+    sqlstr = "select 1 from dual where exists(select * from %s where filename=%s)"
+    sqlstr = sqlstr % (tablename, dbh.get_named_bind_string('fname'));
+
+    found = False
+    curs = dbh.cursor()
+    curs.execute(sqlstr,{"fname":filename})
+    for row in curs:
+        found = True
+    curs.close()
+    return found 
+# end isIngested
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Create ingest temp table')
-    parser.add_argument('-filename',action='store')
-    parser.add_argument('-filetype',action='store')
+    parser.add_argument('--filename',action='store',required=True)
+    parser.add_argument('--filetype',action='store',required=True)
 
     args, unknown_args = parser.parse_known_args()
     args = vars(args)
@@ -155,14 +183,9 @@ if __name__ == '__main__':
 
     if args['filename']:
         fullname = args['filename']
-    else:
-        sys.stderr.write("Missing required parameter 'filename'. Must include filename and filetype\n")
-        exit(1)
+
     if args['filetype']:
         filetype = args['filetype']
-    else:
-        sys.stderr.write("Missing required parameter 'filetype'. Must include filename and filetype\n")
-        exit(1)
 
     try:
         print "datafile_ingest.py: Preparing to ingest " + fullname
@@ -181,14 +204,24 @@ if __name__ == '__main__':
             else:
                 hdu = sectionsWanted[0]
             hduList = pyfits.open(fullname)
+            hdr = hduList[hdu].header
+
             mydict = {}
-            mydict[sectionsWanted[0]] = hduList[hdu].data
+            if 'XTENSION' in hdr and hdr['XTENSION'] == 'BINTABLE':
+                mydict[sectionsWanted[0]] = hduList[hdu].data
+                print "datafile_ingest.py: # rows in file =", len(mydict[sectionsWanted[0]])
+            else:
+                mydict[sectionsWanted[0]] = dict(hdr)
+                print "datafile_ingest.py: # rows in file = 1"
+
 
         filename = miscutils.parse_fullname(fullname, miscutils.CU_PARSE_FILENAME) 
         numrows = ingest_datafile_contents(filename,filetype,mydict,dbh)
         dbh.commit()
-        print "datafile_ingest.py: ingest of " + fullname + ", %s rows, complete" % numrows
+        if numrows == None or numrows == 0:
+            print "datafile_ingest.py: warning - 0 rows ingested from " + fullname
+        else:
+            print "datafile_ingest.py: ingest of " + fullname + ", %s rows, complete" % numrows
     finally:
         if dbh is not None:
             dbh.close()
-
