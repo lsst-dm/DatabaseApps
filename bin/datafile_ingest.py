@@ -173,23 +173,20 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create ingest temp table')
     parser.add_argument('--filename',action='store',required=True)
     parser.add_argument('--filetype',action='store',required=True)
+    parser.add_argument('--section','-s',help='db section in the desservices file')
+    parser.add_argument('--des_services',help='desservices file')
 
     args, unknown_args = parser.parse_known_args()
     args = vars(args)
 
-    fullname = None
-    filetype = None
     dbh = None
 
-    if args['filename']:
-        fullname = args['filename']
-
-    if args['filetype']:
-        filetype = args['filetype']
+    fullname = args['filename']
+    filetype = args['filetype']
 
     try:
         print "datafile_ingest.py: Preparing to ingest " + fullname
-        dbh = DesDmDbi()
+        dbh = DesDmDbi(args['des_services'], args['section'])
         mydict = None
         sectionsWanted = getSectionsForFiletype(filetype,dbh)
         if 'xml' in filetype:
