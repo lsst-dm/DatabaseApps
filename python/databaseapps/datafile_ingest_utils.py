@@ -11,7 +11,7 @@ import pyfits
 import numpy
 
 import despymisc.miscutils as miscutils
-from databaseapps.xmlslurp import Xmlslurper
+from despymisc.xmlslurp import Xmlslurper
 
 DI_COLUMNS = 'columns'
 DI_DATATYPE = 'datatype'
