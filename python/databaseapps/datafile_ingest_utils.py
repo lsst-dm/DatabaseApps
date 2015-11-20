@@ -211,10 +211,6 @@ def get_fits_data(fullname, whichhdu):
 ######################################################################
 def datafile_ingest_main(dbh, filetype, fullname, tablename, didatadefs):
     """ Control process for ingesting data from a file """
-    print "fullname = ", fullname
-    print "filetype = ", filetype
-    print "tablename = ", tablename
-    print "didatadefs = ", didatadefs
 
     #sections_wanted = get_sections_for_filetype(filetype, dbh)
     sections_wanted = didatadefs.keys()
@@ -225,7 +221,6 @@ def datafile_ingest_main(dbh, filetype, fullname, tablename, didatadefs):
         if len(sections_wanted) > 1:
             raise ValueError("Multiple hdus not yet supported\n")
         datadict = get_fits_data(fullname, sections_wanted[0])
-    print "datadict = ", datadict
 
     filename = miscutils.parse_fullname(fullname, miscutils.CU_PARSE_FILENAME)
 
