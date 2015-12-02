@@ -12,8 +12,6 @@
             control file. Uses database data to determine what data from the
             file should be loaded, and the columns that they should be loaded
             into.
-        Xmlslurper - Static wrapper for parsing an XML file and presenting
-            it as a set of dictionaries.
         IngestUtils - Container for ingest utility functions
 
     Error Classes:
@@ -31,11 +29,10 @@ __version__ = "$Rev: 10292 $"
 # Note that pydoc includes documentation for entries in the __all__  list when
 # generating documentation for this package.
 
-__all__ = ['ObjectCatalog', 'Xmlslurper','IngestUtils']
+__all__ = ['ObjectCatalog', 'IngestUtils']
 
 # Make the main class and all the error classes available directly within
 # the package to simplify imports for package users.
 
 from .objectcatalog import ObjectCatalog
-from .xmlslurp import Xmlslurper
 from .ingestutils import IngestUtils
