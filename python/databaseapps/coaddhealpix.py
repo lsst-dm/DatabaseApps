@@ -20,7 +20,7 @@ from databaseapps.ingestutils import IngestUtils as ingestutils
 import argparse
 
 
-class CoaddCatalog:
+class CoaddHealpix:
 
     COLUMN_NAME = 0
     DERIVED = 1
@@ -32,18 +32,16 @@ class CoaddCatalog:
     FILE = 'file'
 
     dbh = None
-    filetype = 'coadd_cat'
+    filetype = 'coadd_hpix'
     schema = None
-    targettable = 'COADD_OBJECT'
-    idsequence = 'COADD_OBJECT_SEQ'
-    catalogtable = 'CATALOG'
+    targettable = 'COADD_OBJECT_HPIX'
     fullfilename = None
     shortfilename = None
     band = None
     tilename = None
     objhdu = 'OBJECTS'
-    controlfilename = 'coaddingest.ctl'
-    logfile = 'coaddingest.log'
+    controlfilename = 'coaddhealpix.ctl'
+    logfile = 'coaddhealpix.log'
     badrowsfile = 'badrows.bad'
     discardfile = 'discarded.bad'
 
@@ -56,9 +54,9 @@ class CoaddCatalog:
     debugDateFormat = '%Y-%m-%d %H:%M:%S'
 
 
-    def __init__(self, ingesttype, datafile, idDict):
+    def __init__(self, datafile, idDict):
 
-        self.debug("start CoaddIngest.init() for file %s" % datafile)
+        self.debug("start CoaddHealpix.init() for file %s" % datafile)
         self.dbh = desdbi.DesDbi()
 
         self.debug("opening fits file")
@@ -74,16 +72,12 @@ class CoaddCatalog:
         self.fullfilename = datafile
         self.shortfilename = ingestutils.getShortFilename(datafile)
 
-        self.setBandAndTilename(ingesttype)
-
         self.constDict = {
             "FILENAME":[self.shortfilename,True],
-            "BAND":[self.band,True],
-            "TILENAME":[self.tilename,True],
             }
         self.debug("start getObjectColumns()")
         self.dbDict = self.getObjectColumns()
-        self.debug("CoaddIngest.init() done")
+        self.debug("CoaddHealpix.init() done")
 
 
     def __del__(self):
@@ -153,27 +147,6 @@ class CoaddCatalog:
         return results
 
 
-    def setBandAndTilename(self, ingesttype):
-        sqlstr = '''
-            select band, tilename
-            from %s
-            where filename=:fname
-            '''
-        cursor = self.dbh.cursor()
-        cattable = self.schema + "." + self.catalogtable
-        cursor.execute(sqlstr % cattable,{"fname":self.shortfilename})
-        records = cursor.fetchall()
-
-        if(len(records) > 0):
-            (self.band, self.tilename) = records[0]
-            if ingesttype == 'det':
-                self.band = 'det'
-            elif self.band == None:
-                exit("Can't determine band for file: " + self.shortfilename)
-        else:
-            exit("Can't determine band or tilename for file: " + self.shortfilename)
-
-
     def checkForArrays(self,records):
         results = OrderedDict()
 
@@ -221,9 +194,6 @@ class CoaddCatalog:
         controlfile.write("INTO TABLE " + schtbl + "\nAPPEND\n" +
             "FIELDS TERMINATED BY ','\n(\n")
 
-        # force db-generated ID to be included, and at the beginning of cols
-        controlfile.write("ID integer external,\n")
-
         for colname, val in self.constDict.iteritems():
             if val[self.QUOTE]:
                 controlfile.write(colname + " CONSTANT '" + val[self.VALUE] + "',\n")
@@ -233,6 +203,9 @@ class CoaddCatalog:
 
 
     def writeControlfileFooter(self,controlfile):
+        # append COADD_OBJECT_ID spec to end of column list
+        controlfile.write(",\nCOADD_OBJECT_ID integer external\n")
+
         controlfile.write(")")
 
 
@@ -265,6 +238,7 @@ class CoaddCatalog:
                     row.append(colname)
                     row.append(dbobjdata[headerName.upper()][self.DATATYPE])
                     filerows.append(" ".join(row))
+
         controlfile.write(",\n".join(filerows))
         self.writeControlfileFooter(controlfile)
         controlfile.close()
@@ -307,7 +281,8 @@ class CoaddCatalog:
             allcols = self.fits[self.objhdu].get_colnames()
 
             for col in allcols:
-                if col.upper() in attrs:
+                # need NUMBER to look up COADD_OBJECT_ID, will be skipped below
+                if col.upper() in attrs or col.upper() == "NUMBER":
                     orderedFitsColumns.append(col)
 
             datatypes = self.fits[self.objhdu].get_rec_dtype()[0]
@@ -327,16 +302,14 @@ class CoaddCatalog:
 
                 for row in data:
                     outrow = []
+                    coadd_object_id = None
 
                     for idx in range(0,len(orderedFitsColumns)):
-                        # insert db-generated ID at the beginning of the list
+                        # if this is NUMBER column, look up COADD_OBJECT_ID and
+                        # then skip it
                         if orderedFitsColumns[idx].upper() == "NUMBER":
-                            if self.idDict.has_key(str(row[idx])):
-                                outrow.insert(0, self.idDict[str(row[idx])])
-                            else:
-                                record = self.getCoaddObjectId()
-                                self.idDict[str(row[idx])] = str(record[0])
-                                outrow.insert(0, str(record[0]))
+                            coadd_object_id = self.idDict[str(row[idx])]
+                            continue
 
                         # if this column is an array of values
                         if datatypes[orderedFitsColumns[idx].upper()].subdtype:
@@ -347,6 +320,9 @@ class CoaddCatalog:
                         # else it is a scalar
                         else:
                             outrow.append(str(row[idx]))
+
+                    # manually append COADD_OBJECT_ID to end of row
+                    outrow.append(coadd_object_id)
 
                     # if sqlldr subprocess is still alive, write to it
                     if sqlldr and sqlldr.poll() == None:
@@ -374,28 +350,13 @@ class CoaddCatalog:
                 os.remove(self.discardfile)
 
 
-    def getCoaddObjectId(self):
-        sqlstr = '''
-            select %s.nextval from dual
-            '''
-        cursor = self.dbh.cursor()
-        seq = self.schema + "." + self.idsequence
-        cursor.execute(sqlstr % seq)
-        records = cursor.fetchall()
-
-        if(len(records) > 0):
-            return records[0]
-        else:
-            return 0
-
-
     def numAlreadyIngested(self):
         results = OrderedDict()
         sqlstr = '''
-            select count(*), id 
+            select count(*), coadd_object_id 
             from %s
             where filename=:fname
-            group by id
+            group by coadd_object_id
             '''
         cursor = self.dbh.cursor()
         schtbl = self.schema + '.' + self.targettable
