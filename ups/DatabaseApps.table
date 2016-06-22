@@ -1,7 +1,6 @@
-setupRequired(despyDMdb 0.1.2+0)
-setupRequired(fitsio 0.9.8rc1+2)
-setupRequired(pyfits 3.3+3)
-setupRequired(despyDMdb 0.1.2+0)
+setupRequired(despyDMdb 0.1.2+4)
+setupRequired(fitsio 0.9.8rc1+4)
+setupRequired(pyfits 3.3+4)
 
 envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
 envPrepend(PATH, ${PRODUCT_DIR}/bin)
