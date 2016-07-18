@@ -11,8 +11,8 @@ import os
 import sys
 import time
 import argparse
+import numpy
 from databaseapps.coaddcatalog import CoaddCatalog as CoaddCatalog
-from databaseapps.coaddhealpix import CoaddHealpix as CoaddHealpix
 
 
 def checkParam(args,param,required):
@@ -28,9 +28,14 @@ def checkParam(args,param,required):
 def printinfo(msg):
         print time.strftime(CoaddCatalog.debugDateFormat) + " - " + msg
 
+
 if __name__ == '__main__':
-    
+
     hduList = None
+
+    # Master dictionary mapping FITS object numbers to coadd object ids.
+    # Need to maintain a consistent mapping across all bands, so this lives
+    # here and will be passed to each catalog ingest method call.
     coaddObjectIdDict = {}
     
     parser = argparse.ArgumentParser(description='Ingest coadd objects from fits catalogs')
@@ -63,7 +68,6 @@ if __name__ == '__main__':
         
     printinfo("Preparing to load detection catalog " + detcat)
 
-    detobj.createControlFile()
     detobj.executeIngest()
         
     printinfo("Ingest of detection catalog " + detcat + " completed")
@@ -84,28 +88,10 @@ if __name__ == '__main__':
             
         printinfo("Preparing to load band catalog " + bandfile)
     
-        bandobj.createControlFile()
         bandobj.executeIngest()
             
         printinfo("Ingest of band catalog " + bandfile + " completed")
 
-    # ingest healpix
-    healpixobj = CoaddHealpix(
-        datafile=healpix,
-        idDict=coaddObjectIdDict
-    )
-
-    (isloaded,code) = healpixobj.isLoaded()
-    if isloaded:
-        exit(code)
-        
-    printinfo("Preparing to load healpix file " + healpix)
-
-    healpixobj.createControlFile()
-    healpixobj.executeIngest()
-
-    printinfo("Ingest of healpix file " + healpix + " completed")
-
-# **************************************
-# cpond: deal with extinct
-# **************************************
+    # ********************************************
+    # ingestion of healpix and extinct goes here
+    # ********************************************
