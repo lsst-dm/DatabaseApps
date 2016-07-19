@@ -28,6 +28,7 @@ class CoaddCatalog:
     dbh = None
     schema = None
     fits = None
+    fits_chunk = 10000
     objhdu = 'OBJECTS'
     filetype = 'coadd_cat'
 
@@ -47,7 +48,7 @@ class CoaddCatalog:
     # dictionary of coadd_object table columns in db
     dbDict = None
 
-    # dictionary of coadd object ids, set from parameter given to __init__ 
+    # dictionary of coadd object ids. master dict passed to __init__
     idDict = {}
 
     debug = True
@@ -63,10 +64,10 @@ class CoaddCatalog:
         self.fits = fitsio.FITS(datafile)
         self.debug("fits file opened")
 
-        # dictionary of coadd object ids, set from parameter given to __init__ 
+        # initialize dictionary of coadd object ids from master
         self.idDict = idDict
 
-        # grab current schema by resolving from table. odd, but works.
+        # grab current schema by resolving from table in a very odd way
         self.debug("start resolveDbObject() for table: %s" % self.targettable)
         (self.schema,self.targettable) = ingestutils.resolveDbObject(self.targettable,self.dbh)
         self.debug("schema, targettable = %s, %s" % (self.schema, self.targettable))
@@ -153,8 +154,8 @@ class CoaddCatalog:
     #
     # setCatalogInfo:
     #
-    # Grab info from catalog table based on the filename, and set as class
-    # variables.
+    # Grab info from catalog table based on the filename, and set corresponding
+    # class variables.
     #
     ###########################################################################
     def setCatalogInfo(self, ingesttype):
@@ -170,19 +171,19 @@ class CoaddCatalog:
         if(len(records) > 0):
             (self.band, self.tilename, self.pfw_attempt_id) = records[0]
 
-            # band won't be set for detection image, set band to 'det'
+            # band won't be set for detection image, so set it to 'det'
             if ingesttype == 'det':
                 self.band = 'det'
             elif self.band == None:
-                exit("Can't determine band for file: " + self.shortfilename)
+                exit("Can't find band for file " + self.shortfilename + " in catalog table")
 
             if self.tilename == None:
-                exit("Can't determine tilename for file: " + self.shortfilename)
+                exit("Can't find tilename for file " + self.shortfilename + " in catalog table")
 
             if self.pfw_attempt_id == None:
-                exit("Can't determine pfw_attempt_id for file: " + self.shortfilename)
+                exit("Can't find pfw_attempt_id for file " + self.shortfilename + " in catalog table")
         else:
-            exit("Can't determine catalog info for file: " + self.shortfilename)
+            exit("File " + self.shortfilename + " missing from catalog table")
 
 
     def checkForArrays(self,records):
@@ -225,7 +226,8 @@ class CoaddCatalog:
         # array of arrays used to fill bind variables for executemany()
         sqldata = []
 
-        # retrieve all coadd objects ids needed for this band's ingest in one go
+        # retrieve all coadd objects ids needed for this band's ingest as
+        # one list
         self.info("grabbing block of coadd object ids")
         coadd_recs = self.getCoaddObjectIds(self.fits[self.objhdu].get_nrows())
         coadd_ids = [item[0] for item in coadd_recs]
@@ -243,17 +245,16 @@ class CoaddCatalog:
                 if col.upper() in attrs:
                     orderedFitsColumns.append(col)
 
-            # FITS attribute datatypes
             datatypes = self.fits[self.objhdu].get_rec_dtype()[0]
 
             startrow = firstrow-1
             endrow = firstrow-1
 
-            # grab FITS data in 10000-row chunks, and build array of arrays
-            # of the values in each row
+            # grab FITS data in chunks of rows, and build array of arrays
+            # of the rows to pass to executemany()
             while endrow < lastrow:
                 startrow = endrow
-                endrow = min(startrow+10000, lastrow)
+                endrow = min(startrow+self.fits_chunk, lastrow)
 
                 data = fitsio.read(
                         self.fullfilename,
@@ -264,7 +265,7 @@ class CoaddCatalog:
                 for row in data:
                     # IMPORTANT! Must convert numpy array to python list, or
                     # suffer big performance hit. This is due to numpy bug
-                    # fixed in more recent version.
+                    # fixed in more recent version than one in EUPS.
                     row = row.tolist()
 
                     # array to hold values for this FITS row
@@ -295,7 +296,7 @@ class CoaddCatalog:
                         else:
                             outrow.append(row[idx])
 
-                    # add this array of values to the sql data for bind vars
+                    # add row to the sql data for bind vars
                     sqldata.append(outrow)
 
                     #self.info("outrow: " + ",".join(map(str, outrow)))
@@ -521,7 +522,7 @@ class CoaddCatalog:
                 ) values (
                 ''' % self.targettable
 
-            # add constant band, tile, and filename info to sql string
+            # add constants (band, tile, filename, and pfw_attempt_id) to sql
             sqlstr = sqlstr + "'" + self.band + "', '" + self.tilename + "', '" + self.shortfilename + "', " + str(self.pfw_attempt_id) + ", "
 
             # add bind variable placeholders to sql string
@@ -535,8 +536,7 @@ class CoaddCatalog:
 
             self.info("inserting rows")
 
-            # prepare sql string cursor, and execute for each row of FITS values
-            # contained in the sqldata array of arrays
+            # execute cursor for each row of FITS values contained in sqldata
             cursor.prepare(sqlstr)
             cursor.executemany(None, sqldata)
             cursor.close()
@@ -548,12 +548,12 @@ class CoaddCatalog:
     #
     # getCoaddObjectsIds:
     #
-    # Get block of coadd object ids from db. Number of ids needed is specified
-    # by numobjs
+    # Get block of coadd object ids from db. Number of ids needed is passed
+    # in numobjs
     #
     ###########################################################################
     def getCoaddObjectIds(self, numobjs):
-        # tricky Oracle sql to get block all at once
+        # Oracle sql to get id block all at once
         sqlstr = '''
             select %s.nextval from dual
             connect by level < %d
@@ -562,10 +562,7 @@ class CoaddCatalog:
         cursor.execute(sqlstr % (self.idsequence, (numobjs+1)))
         records = cursor.fetchall()
 
-        if(len(records) > 0):
-            return records
-        else:
-            return 0
+        return records
 
 
     def numAlreadyIngested(self):
