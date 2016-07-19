@@ -22,6 +22,8 @@ import argparse
 
 class CoaddCatalog:
 
+    # These two constants represent the index of the column names and array
+    # positions of each column name for storing a FITS array of values.
     COLUMN_NAME = 0
     POSITION = 3
 
@@ -127,6 +129,25 @@ class CoaddCatalog:
         for rec in records:
             hdr = None
 
+            #
+            # rec[0] = ops_datafile_metadata.hdu
+            #
+            # rec[1] = ops_datafile_metadata.attribute_name, or
+            #          all_tab_columns.column_name if attribute_name is not set
+            #
+            # rec[2] = ops_datafile_metadata.position
+            #
+            # rec[3] = all_tab_columns.column_name
+            #
+            # rec[4] = ops_datafile_metadata.derived
+            #
+            # rec[5] = translation of all_tab_columns.data_type into format of
+            #          ops_datafile_metadata.data_format
+            #
+
+            # - set hdr to the coadd's hdu if hdu wasn't set in metadata table
+            # - if the metadata hdu is set to PRIMARY, don't set hdr at all
+            # - otherwise, set hdr to hdu value from metadata table
             if rec[0] == None:
                 hdr = self.objhdu
             elif rec[0].upper() == 'PRIMARY':
@@ -137,9 +158,17 @@ class CoaddCatalog:
                 else:
                     hdr = rec[0]
 
+            # make new OrderedDict for this HDU if not already in results array
             if hdr not in results:
                 results[hdr] = OrderedDict()
 
+            # Add rec to results array. If column name already exists in the
+            # array, the column represents a FITS array of values, so must
+            # instead append the value and position to the array entry for
+            # this column.
+            #
+            # An example of this are the MAG_APER values, which will be stored
+            # in the db as MAG_APER1, MAG_APER2...
             if rec[1] not in results[hdr]:
                 results[hdr][rec[1]] = [[rec[3]],rec[4],rec[5],[str(rec[2])]]
             else:
@@ -148,6 +177,28 @@ class CoaddCatalog:
         cursor.close()
         self.checkForArrays(results)
         return results
+
+
+    def checkForArrays(self,records):
+        results = OrderedDict()
+
+        pat = re.compile('^(.*)_(\d*)$',re.IGNORECASE)
+        if self.objhdu in records:
+            for k, v in records[self.objhdu].iteritems():
+                attrname = None
+                pos = 0
+                m = pat.match(k)
+                if m:
+                    attrname = m.group(1)
+                    pos = m.group(2)
+                    if attrname not in results:
+                        results[attrname] = [[k],v[1],v[2],[str(int(pos)-1)]]
+                    else:
+                        results[attrname][self.COLUMN_NAME].append(k)
+                        results[attrname][self.POSITION].append(str(int(pos)-1))
+                else:
+                    results[k]=v
+            records[self.objhdu] = results
 
 
     ###########################################################################
@@ -184,28 +235,6 @@ class CoaddCatalog:
                 exit("Can't find pfw_attempt_id for file " + self.shortfilename + " in catalog table")
         else:
             exit("File " + self.shortfilename + " missing from catalog table")
-
-
-    def checkForArrays(self,records):
-        results = OrderedDict()
-
-        pat = re.compile('^(.*)_(\d*)$',re.IGNORECASE)
-        if self.objhdu in records:
-            for k, v in records[self.objhdu].iteritems():
-                attrname = None
-                pos = 0
-                m = pat.match(k)
-                if m:
-                    attrname = m.group(1)
-                    pos = m.group(2)
-                    if attrname not in results:
-                        results[attrname] = [[k],v[1],v[2],[str(int(pos)-1)]]
-                    else:
-                        results[attrname][self.COLUMN_NAME].append(k)
-                        results[attrname][self.POSITION].append(str(int(pos)-1))
-                else:
-                    results[k]=v
-            records[self.objhdu] = results
 
 
     ###########################################################################
