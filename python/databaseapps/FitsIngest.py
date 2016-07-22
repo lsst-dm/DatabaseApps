@@ -110,6 +110,7 @@ class FitsIngest(Ingest):
             e = sys.exc_info()[1]
             print "Exception raised: %s" % (e)
             print "Attempting to continue"
+            self.sqldata = []
             self.status = 1
         finally:
             if self.generateID:
