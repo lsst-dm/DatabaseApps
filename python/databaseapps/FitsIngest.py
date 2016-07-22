@@ -107,9 +107,10 @@ class FitsIngest(Ingest):
                             outrow.append(row[idx])
                     self.sqldata.append(outrow)
         except:
-            e = sys.exc_info()[0]
+            e = sys.exc_info()[1]
             print "Exception raised: %s" % (e)
             print "Attempting to continue"
+            self.status = 1
         finally:
             if self.generateID:
                 self.dbDict[self.objhdu]['ID'] = Entry(column_name='ID', position=0)

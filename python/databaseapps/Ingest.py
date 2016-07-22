@@ -18,7 +18,7 @@ class Ingest(object):
             self.dbh = dbh
         self.cursor = self.dbh.cursor()
         # get the table name that is being filled, based on the input data type
-        self.cursor.execute("select table_name from friedel.ops_datafile_tble where filetype='%s'" % (filetype))
+        self.cursor.execute("select table_name from ops_datafile_table where filetype='%s'" % (filetype))
         self.targettable = self.cursor.fetchall()[0][0]
         self.filetype = filetype
         self.idColumn = None
@@ -29,9 +29,13 @@ class Ingest(object):
         self.sqldata = []
         self.fullfilename = datafile
         self.shortfilename = ingestutils.getShortFilename(datafile)
+        self.status = 0
 
         # dictionary of table columns in db
         self.dbDict = self.getObjectColumns()
+
+    def getstatus(self):
+        return self.status
 
     def debug(self, msg):
         if self.debug:
@@ -45,7 +49,7 @@ class Ingest(object):
 
         """
         results = {}
-        sqlstr = "select hdu, UPPER(attribute_name), position, column_name, datafile_datatype from friedel.ops_datafile_mdata where filetype = '%s'" % (self.filetype)
+        sqlstr = "select hdu, UPPER(attribute_name), position, column_name, datafile_datatype from ops_datafile_metadata where filetype = '%s'" % (self.filetype)
         if self.order is not None:
             sqlstr += " order by %s" % (self.order)
         cursor = self.dbh.cursor()
@@ -107,8 +111,6 @@ class Ingest(object):
 
         """
         loaded = False
-        exitcode = 0
-
 
         numDbObjects = self.numAlreadyIngested()
         numCatObjects = self.getNumObjects()
@@ -118,16 +120,14 @@ class Ingest(object):
                 self.info("WARNING: file " + self.fullfilename + 
                           " already ingested with the same number of" +
                           " objects. Aborting new ingest.")
-                exitcode = 0
             else:
                 errstr = ("ERROR: file " + self.fullfilename +
                           " already ingested, but the number of objects is" +
                           " DIFFERENT: catalog=" + str(numCatObjects) +
                           "; DB=" + str(numDbObjects) + ".")
                 raise Exception(errstr)
-                exitcode = 1
 
-        return (loaded,exitcode)
+        return loaded
 
     def executeIngest(self):
         """ Generic method to insert the data into the database

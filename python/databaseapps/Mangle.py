@@ -1,4 +1,5 @@
 from Ingest import Ingest
+import sys
 
 class Mangle(Ingest):
     """ Class to ingest the outputs from a Mangle run
@@ -36,17 +37,23 @@ class Mangle(Ingest):
         """ Method to convert the input data into a list of lists
 
         """
-        types = []
-        # create a list of objects used to cast the data
-        for item in self.dbDict[self.hdu].values():
-            if item.dtype.upper() == "INT":
-                types.append(int)
-            elif item.dtype.upper() == "FLOAT":
-                types.append(float)
-            else:
-                types.append(str)
-        self.parseCSV(self.fullfilename, types)
-        self.orderedColumns = self.dbDict[self.hdu].keys()
+        try:
+            types = []
+            # create a list of objects used to cast the data
+            for item in self.dbDict[self.hdu].values():
+                if item.dtype.upper() == "INT":
+                    types.append(int)
+                elif item.dtype.upper() == "FLOAT":
+                    types.append(float)
+                else:
+                    types.append(str)
+            self.parseCSV(self.fullfilename, types)
+            self.orderedColumns = self.dbDict[self.hdu].keys()
+        except:
+            e = sys.exc_info()[1]
+            print "Exception raised: %s" % (e)
+            print "Attempting to continue\n"
+            self.status = 1
 
     def getNumObjects(self):
         """ Get the number of objects to ingest
