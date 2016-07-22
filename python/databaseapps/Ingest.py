@@ -154,10 +154,16 @@ class Ingest(object):
         sqlstr += ")"
         cursor = self.dbh.cursor()
         cursor.prepare(sqlstr)
-        cursor.executemany(None, self.sqldata)
-        cursor.close()
-        self.dbh.commit()
-        self.info("Inserted %d rows into table %s" % (len(self.sqldata), self.targettable))
+        try:
+            cursor.executemany(None, self.sqldata)
+            cursor.close()
+            self.dbh.commit()
+            self.info("Inserted %d rows into table %s" % (len(self.sqldata), self.targettable))
+        except:
+            e = sys.exc_info()[1]
+            print "Exception raised: %s" % (e)
+            print "Attempting to continue"
+            self.dbh.rollback()
 
 
 class Entry(object):
