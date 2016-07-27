@@ -12,7 +12,7 @@ class Extinction(FitsIngest):
         self.constants = {
                 "FILENAME": self.shortfilename,
                 }
-        if filetype != 'extinct_ebv':
+        if filetype != 'coadd_extinct_ebv':
             self.header = fitsio.read_header(datafile, self.objhdu)
             band = self.header['BAND'].strip()
             self.constants["BAND"] = band

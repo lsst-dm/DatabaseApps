@@ -145,7 +145,7 @@ if __name__ == '__main__':
         wavgfiles = getfilelist(wavg)
         for file, band in wavgfiles:
             try:
-                wavgobj = Wavg(filetype='wavg', datafile=file, idDict=coaddObjectIdDict, band=band, dbh=dbh)
+                wavgobj = Wavg(filetype='coadd_wavg', datafile=file, idDict=coaddObjectIdDict, band=band, dbh=dbh)
                 isLoaded = wavgobj.isLoaded()
                 if isLoaded:
                     print "Wavg catalog %s already loaded, continuing" % (file)
@@ -164,7 +164,7 @@ if __name__ == '__main__':
         wavgfiles = getfilelist(wavg_oclink)
         for file, band in wavgfiles:
             try:
-                wavgobj = Wavg(filetype='wavg_oclink', datafile=file, idDict=coaddObjectIdDict, band=band, dbh=dbh)
+                wavgobj = Wavg(filetype='coadd_wavg_oclink', datafile=file, idDict=coaddObjectIdDict, band=band, dbh=dbh)
                 isLoaded = wavgobj.isLoaded()
                 if isLoaded:
                     print "Wavg_oclink catalog %s already loaded, continuing" % (file)
@@ -183,7 +183,7 @@ if __name__ == '__main__':
         ccdfiles = getfilelist(ccdgon)
         for file in ccdfiles:
             try:
-                ccdobj = Mangle(datafile=file[0], filetype='ccdgon', idDict=coaddObjectIdDict, dbh=dbh)
+                ccdobj = Mangle(datafile=file[0], filetype='mangle_csv_ccdgon', idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = ccdobj.isLoaded()
                 if isLoaded:
                     printinfo("ccdgon catalogs already loaded, continuing")
@@ -202,7 +202,7 @@ if __name__ == '__main__':
         molyfiles = getfilelist(molygon)
         for file in molyfiles:
             try:
-                molyobj = Mangle(datafile=file[0], filetype='molygon', idDict=coaddObjectIdDict, dbh=dbh)
+                molyobj = Mangle(datafile=file[0], filetype='mangle_csv_molygon', idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = molyobj.isLoaded()
                 if isLoaded:
                     printinfo("molygon catalogs already loaded, continuing")
@@ -221,7 +221,7 @@ if __name__ == '__main__':
         mcfiles = getfilelist(molygon_ccdgon)
         for file in mcfiles:
             try:
-                mcobj = Mangle(datafile=file[0], filetype='molygon_ccdgon', idDict=coaddObjectIdDict, dbh=dbh)
+                mcobj = Mangle(datafile=file[0], filetype='mangle_csv_molyccd', idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = mcobj.isLoaded()
                 if isLoaded:
                     printinfo("molygon_ccdgon catalogs already loaded, continuing")
@@ -240,7 +240,7 @@ if __name__ == '__main__':
         cmfiles = getfilelist(coadd_object_molygon)
         for file in cmfiles:
             try:
-                cmobj = Mangle(datafile=file[0], filetype='coadd_object_molygon', idDict=coaddObjectIdDict, dbh=dbh)
+                cmobj = Mangle(datafile=file[0], filetype='mangle_csv_cobjmoly', idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = cmobj.isLoaded()
                 if isLoaded:
                     printinfo("coadd_object_molygon catalogs already loaded, continuing")
@@ -257,7 +257,7 @@ if __name__ == '__main__':
 
     if extinct is not None:
         try:
-            extobj = Extinction(datafile=extinct, idDict=coaddObjectIdDict, filetype='extinct_ebv', dbh=dbh)
+            extobj = Extinction(datafile=extinct, idDict=coaddObjectIdDict, filetype='coadd_extinct_ebv', dbh=dbh)
             isLoaded = extobj.isLoaded()
             if isLoaded:
                 print "Extinction catalog already loaded, continuing"
@@ -276,7 +276,7 @@ if __name__ == '__main__':
         exfiles = getfilelist(extinct_band)
         for file in exfiles:
             try:
-                extobj = Extinction(datafile=file[0], idDict=coaddObjectIdDict, filetype='extinct_band', dbh=dbh)
+                extobj = Extinction(datafile=file[0], idDict=coaddObjectIdDict, filetype='coadd_extinct_band', dbh=dbh)
                 isLoaded = extobj.isLoaded()
                 if isLoaded:
                     print "Extinction catalog already loaded, continuing"
