@@ -4,6 +4,7 @@ import sys
 import time
 from despydb import desdbi
 import argparse
+import traceback
 from databaseapps.CoaddCatalog import CoaddCatalog
 from databaseapps.CoaddHealpix import CoaddHealpix
 from databaseapps.Mangle import Mangle
@@ -87,15 +88,20 @@ if __name__ == '__main__':
             detobj = CoaddCatalog(ingesttype='det', datafile=detcat, idDict=coaddObjectIdDict, dbh=dbh)
             isLoaded = detobj.isLoaded()
             if isLoaded:
-                print "Det catalog already loaded, continuing"
+                printinfo("Det catalog %s already loaded, getting Coadd IDs\n" % (detcat))
+                detobj.retrieveCoaddObjectIds()
             else:
                 printinfo("Preparing to load detection catalog " + detcat)
                 detobj.executeIngest()
                 retval += detobj.getstatus()
                 printinfo("Ingest of detection catalog " + detcat + " completed\n")
         except:
-            e = sys.exc_info()[1]
+            se = sys.exc_info()
+            e = se[1]
+            tb = se[2]
             print "Exception raised:", e
+            print "Traceback: "
+            traceback.print_tb(tb)
             print "Attempting to continue\n"
             retval += 1
 
@@ -107,15 +113,20 @@ if __name__ == '__main__':
                 bandobj = CoaddCatalog(ingesttype='band', datafile=bfile, idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = bandobj.isLoaded()
                 if isLoaded:
-                    print "Band catalog %s already loaded, continuing" % (bfile)
+                    printinfo("Band catalog %s already loaded, getting Coadd IDs\n" % (bfile))
+                    bandobj.retrieveCoaddObjectIds()
                 else:
                     printinfo("Preparing to load band catalog " + bfile)
                     bandobj.executeIngest()
                     retval += bandobj.getstatus()
                     printinfo("Ingest of band catalog " + bfile + " completed\n")
             except:
-                e = sys.exc_info()[1]
+                se = sys.exc_info()
+                e = se[1]
+                tb = se[2]
                 print "Exception raised:", e
+                print "Traceback: "
+                traceback.print_tb(tb)
                 print "Attempting to continue\n"
                 retval += 1
 
@@ -129,15 +140,19 @@ if __name__ == '__main__':
             healobj = CoaddHealpix(datafile=healpix, idDict=coaddObjectIdDict, dbh=dbh)
             isLoaded = healobj.isLoaded()
             if isLoaded:
-                print "Healpix catalog already loaded, continuing"
+                printinfo("Healpix catalog %s already loaded, continuing\n" % (healpix))
             else:
                 printinfo("Preparing to load healpix catalog " + healpix)
                 healobj.executeIngest()
                 retval += healobj.getstatus()
                 printinfo("Ingest of healpix catalog " + healpix + " completed\n")
         except:
-            e = sys.exc_info()[1]
+            se = sys.exc_info()
+            e = se[1]
+            tb = se[2]
             print "Exception raised:", e
+            print "Traceback: "
+            traceback.print_tb(tb)
             print "Attempting to continue\n"
             retval += 1
 
@@ -148,15 +163,19 @@ if __name__ == '__main__':
                 wavgobj = Wavg(filetype='coadd_wavg', datafile=file, idDict=coaddObjectIdDict, band=band, dbh=dbh)
                 isLoaded = wavgobj.isLoaded()
                 if isLoaded:
-                    print "Wavg catalog %s already loaded, continuing" % (file)
+                    printinfo("Wavg catalog %s already loaded, continuing\n" % (file))
                 else:
                     printinfo("Preparing to load wavg catalog " + file)
                     wavgobj.executeIngest()
                     retval += wavgobj.getstatus()
                     printinfo("Ingest of wavg catalog " + file + " completed\n")
             except:
-                e = sys.exc_info()[1]
+                se = sys.exc_info()
+                e = se[1]
+                tb = se[2]
                 print "Exception raised:", e
+                print "Traceback: "
+                traceback.print_tb(tb)
                 print "Attempting to continue\n"
                 retval += 1
 
@@ -167,15 +186,19 @@ if __name__ == '__main__':
                 wavgobj = Wavg(filetype='coadd_wavg_oclink', datafile=file, idDict=coaddObjectIdDict, band=band, dbh=dbh)
                 isLoaded = wavgobj.isLoaded()
                 if isLoaded:
-                    print "Wavg_oclink catalog %s already loaded, continuing" % (file)
+                    printinfo("Wavg_oclink catalog %s already loaded, continuing\n" % (file))
                 else:
                     printinfo("Preparing to load wavg_oclink catalog " + file)
                     wavgobj.executeIngest()
                     retval += wavgobj.getstatus()
                     printinfo("Ingest of wavg_oclink catalog " + file + " completed\n")
             except:
-                e = sys.exc_info()[1]
+                se = sys.exc_info()
+                e = se[1]
+                tb = se[2]
                 print "Exception raised:", e
+                print "Traceback: "
+                traceback.print_tb(tb)
                 print "Attempting to continue\n"
                 retval += 1
 
@@ -186,15 +209,19 @@ if __name__ == '__main__':
                 ccdobj = Mangle(datafile=file[0], filetype='mangle_csv_ccdgon', idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = ccdobj.isLoaded()
                 if isLoaded:
-                    printinfo("ccdgon catalogs already loaded, continuing")
+                    printinfo("ccdgon catalog %s already loaded, continuing\n" % (file[0]))
                 else:
                     printinfo("Preparing to load ccdgon file " + file[0])
                     ccdobj.executeIngest()
                     retval += ccdobj.getstatus()
                     printinfo("Ingest of ccdgon file " + file[0] + " completed\n")
             except:
-                e = sys.exc_info()[1]
+                se = sys.exc_info()
+                e = se[1]
+                tb = se[2]
                 print "Exception raised:", e
+                print "Traceback: "
+                traceback.print_tb(tb)
                 print "Attempting to continue\n"
                 retval += 1
 
@@ -205,15 +232,19 @@ if __name__ == '__main__':
                 molyobj = Mangle(datafile=file[0], filetype='mangle_csv_molygon', idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = molyobj.isLoaded()
                 if isLoaded:
-                    printinfo("molygon catalogs already loaded, continuing")
+                    printinfo("molygon catalog %s already loaded, continuing\n" % (file[0]))
                 else:
                     printinfo("Preparing to load molygon file " + file[0])
                     molyobj.executeIngest()
                     retval += molyobj.getstatus()
                     printinfo("Ingest of molygon file " + file[0] + " completed\n")
             except:
-                e = sys.exc_info()[1]
+                se = sys.exc_info()
+                e = se[1]
+                tb = se[2]
                 print "Exception raised:", e
+                print "Traceback: "
+                traceback.print_tb(tb)
                 print "Attempting to continue\n"
                 retval += 1
 
@@ -224,15 +255,19 @@ if __name__ == '__main__':
                 mcobj = Mangle(datafile=file[0], filetype='mangle_csv_molyccd', idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = mcobj.isLoaded()
                 if isLoaded:
-                    printinfo("molygon_ccdgon catalogs already loaded, continuing")
+                    printinfo("molygon_ccdgon catalog %s already loaded, continuing\n" % (file[0]))
                 else:
                     printinfo("Preparing to load molygon_ccdgon file " + file[0])
                     mcobj.executeIngest()
                     retval += mcobj.getstatus()
                     printinfo("Ingest of molygon_ccdgon file " + file[0] + " completed\n")
             except:
-                e = sys.exc_info()[1]
+                se = sys.exc_info()
+                e = se[1]
+                tb = se[2]
                 print "Exception raised:", e
+                print "Traceback: "
+                traceback.print_tb(tb)
                 print "Attempting to continue\n"
                 retval += 1
 
@@ -240,18 +275,22 @@ if __name__ == '__main__':
         cmfiles = getfilelist(coadd_object_molygon)
         for file in cmfiles:
             try:
-                cmobj = Mangle(datafile=file[0], filetype='mangle_csv_cobjmoly', idDict=coaddObjectIdDict, dbh=dbh)
+                cmobj = Mangle(datafile=file[0], filetype='mangle_csv_cobjmoly', idDict=coaddObjectIdDict, dbh=dbh, replacecol=3)
                 isLoaded = cmobj.isLoaded()
                 if isLoaded:
-                    printinfo("coadd_object_molygon catalogs already loaded, continuing")
+                    printinfo("coadd_object_molygon catalog %s already loaded, continuing\n" % (file[0]))
                 else:
                     printinfo("Preparing to load coadd_object_molygon file " + file[0])
                     cmobj.executeIngest()
                     retval += cmobj.getstatus()
                     printinfo("Ingest of coadd_object_molygon file " + file[0] + " completed\n")
             except:
-                e = sys.exc_info()[1]
+                se = sys.exc_info()
+                e = se[1]
+                tb = se[2]
                 print "Exception raised:", e
+                print "Traceback: "
+                traceback.print_tb(tb)
                 print "Attempting to continue\n"
                 retval += 1
 
@@ -260,15 +299,19 @@ if __name__ == '__main__':
             extobj = Extinction(datafile=extinct, idDict=coaddObjectIdDict, filetype='coadd_extinct_ebv', dbh=dbh)
             isLoaded = extobj.isLoaded()
             if isLoaded:
-                print "Extinction catalog already loaded, continuing"
+                printinfo("Extinction catalog %s already loaded, continuing\n" % (extinct))
             else:
                 printinfo("Preparing to load extinction catalog " + extinct)
                 extobj.executeIngest()
                 retval += extobj.getstatus()
                 printinfo("Ingest of detection catalog " + extinct + " completed\n")
         except:
-            e = sys.exc_info()[1]
+            se = sys.exc_info()
+            e = se[1]
+            tb = se[2]
             print "Exception raised:", e
+            print "Traceback: "
+            traceback.print_tb(tb)
             print "Attempting to continue\n"
             retval += 1
 
@@ -279,15 +322,19 @@ if __name__ == '__main__':
                 extobj = Extinction(datafile=file[0], idDict=coaddObjectIdDict, filetype='coadd_extinct_band', dbh=dbh)
                 isLoaded = extobj.isLoaded()
                 if isLoaded:
-                    print "Extinction catalog already loaded, continuing"
+                    printinfo("Extinction catalog %s already loaded, continuing\n" % (file[0]))
                 else:
                     printinfo("Preparing to load extinction catalog " + file[0])
                     extobj.executeIngest()
                     retval += extobj.getstatus()
                     printinfo("Ingest of detection catalog " + file[0] + " completed\n")
             except:
-                e = sys.exc_info()[1]
+                se = sys.exc_info()
+                e = se[1]
+                tb = se[2]
                 print "Exception raised:", e
+                print "Traceback: "
+                traceback.print_tb(tb)
                 print "Attempting to continue\n"
                 retval += 1
     exit(retval)

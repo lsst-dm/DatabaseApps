@@ -1,16 +1,18 @@
 from Ingest import Ingest
 import sys
+import traceback
 
 class Mangle(Ingest):
     """ Class to ingest the outputs from a Mangle run
 
     """
-    def __init__(self, datafile, filetype, idDict, dbh):
+    def __init__(self, datafile, filetype, idDict, dbh, replacecol=None):
         Ingest.__init__(self, filetype, datafile, "CSV", '3', dbh)
         self.hdu = "CSV"
         self.idDict = idDict
         self.coadd_id = None
         self.constants = {"FILENAME" : self.shortfilename}
+        self.replacecol = replacecol
 
         if "COADD_OBJECT_ID" in self.dbDict[self.hdu].keys():
             self.coadd_id = self.dbDict[self.hdu]["COADD_OBJECT_ID"].position[0]
@@ -21,7 +23,7 @@ class Mangle(Ingest):
         """
         f = open(filename, 'r')
         lines = f.readlines()
-
+        #print "SRC",self.replacecol
         for line in lines:
             tdata = line.split(",")
             # cast the data appropriately
@@ -30,6 +32,11 @@ class Mangle(Ingest):
                     tdata[i] = self.idDict[types[i](d)]
                 else:
                     tdata[i] = types[i](d)
+            #if self.replacecol is not None:
+            #    print len(tdata)
+            #    print tdata
+            if self.replacecol is not None and tdata[self.replacecol] == -1:
+                tdata[self.replacecol] = None
             self.sqldata.append(tdata)
         f.close()
 
@@ -50,8 +57,12 @@ class Mangle(Ingest):
             self.parseCSV(self.fullfilename, types)
             self.orderedColumns = self.dbDict[self.hdu].keys()
         except:
-            e = sys.exc_info()[1]
-            print "Exception raised: %s" % (e)
+            se = sys.exc_info()
+            e = se[1]
+            tb = se[2]
+            print "Exception raised:", e
+            print "Traceback: "
+            traceback.print_tb(tb)
             print "Attempting to continue\n"
             self.status = 1
 

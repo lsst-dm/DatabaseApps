@@ -1,5 +1,6 @@
 import fitsio
 import sys
+import traceback
 from Ingest import Ingest, Entry
 
 class FitsIngest(Ingest):
@@ -107,8 +108,12 @@ class FitsIngest(Ingest):
                             outrow.append(row[idx])
                     self.sqldata.append(outrow)
         except:
-            e = sys.exc_info()[1]
-            print "Exception raised: %s" % (e)
+            se = sys.exc_info()
+            e = se[1]
+            tb = se[2]
+            print "Exception raised: ", e
+            print "Traceback: "
+            traceback.print_tb(tb)
             print "Attempting to continue"
             self.sqldata = []
             self.status = 1

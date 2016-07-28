@@ -1,7 +1,8 @@
 import time
 from collections import OrderedDict
-#from databaseapps.ingestutils import IngestUtils as ingestutils
-from ingestutils import IngestUtils as ingestutils                                                                  
+from ingestutils import IngestUtils as ingestutils
+import traceback
+import sys
 
 class Ingest(object):
     """ General base class for ingesting data into the database
@@ -93,13 +94,9 @@ class Ingest(object):
         """ Determine the number of entries already ingested from the data source
 
         """
-        sqlstr = '''
-            select count(*)
-            from %s
-            where filename=:fname
-            '''
+        sqlstr = "select count(*) from %s where filename='%s'" % (self.targettable, self.shortfilename)
         cursor = self.dbh.cursor()
-        cursor.execute(sqlstr % self.targettable,{"fname":self.shortfilename})
+        cursor.execute(sqlstr)# % self.targettable,{"fname":self.shortfilename})
         count = cursor.fetchone()[0]
         
         return count
@@ -154,14 +151,21 @@ class Ingest(object):
         sqlstr += ")"
         cursor = self.dbh.cursor()
         cursor.prepare(sqlstr)
+        #print sqlstr
         try:
+            #for dt in self.sqldata:
+            #    print dt
             cursor.executemany(None, self.sqldata)
             cursor.close()
             self.dbh.commit()
             self.info("Inserted %d rows into table %s" % (len(self.sqldata), self.targettable))
         except:
-            e = sys.exc_info()[1]
-            print "Exception raised: %s" % (e)
+            se = sys.exc_info()
+            e = se[1]
+            tb = se[2]
+            print "Exception raised: ",e
+            print "Traceback: "
+            traceback.print_tb(tb)
             print "Attempting to continue"
             self.dbh.rollback()
 

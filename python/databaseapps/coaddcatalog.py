@@ -175,30 +175,7 @@ class CoaddCatalog:
                 results[hdr][rec[1]][self.COLUMN_NAME].append(rec[3])
                 results[hdr][rec[1]][self.POSITION].append(str(rec[2]))
         cursor.close()
-        self.checkForArrays(results)
         return results
-
-
-    def checkForArrays(self,records):
-        results = OrderedDict()
-
-        pat = re.compile('^(.*)_(\d*)$',re.IGNORECASE)
-        if self.objhdu in records:
-            for k, v in records[self.objhdu].iteritems():
-                attrname = None
-                pos = 0
-                m = pat.match(k)
-                if m:
-                    attrname = m.group(1)
-                    pos = m.group(2)
-                    if attrname not in results:
-                        results[attrname] = [[k],v[1],v[2],[str(int(pos)-1)]]
-                    else:
-                        results[attrname][self.COLUMN_NAME].append(k)
-                        results[attrname][self.POSITION].append(str(int(pos)-1))
-                else:
-                    results[k]=v
-            records[self.objhdu] = results
 
 
     ###########################################################################

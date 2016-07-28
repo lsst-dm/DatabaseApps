@@ -73,3 +73,16 @@ class CoaddCatalog(FitsIngest):
         records = cursor.fetchall()
 
         return records
+
+    def retrieveCoaddObjectIds(self):
+        """ Get the coadd object id's if the data have already been ingested
+
+        """
+        sqlstr = "select object_number, id from %s where filename='%s'" % (self.targettable, self.shortfilename)
+        cursor = self.dbh.cursor()
+        cursor.execute(sqlstr)
+        records = cursor.fetchall()
+        for r in records:
+            if not self.idDict.has_key(r[0]):
+                self.idDict[r[0]] = r[1]
+
