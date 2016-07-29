@@ -28,6 +28,7 @@ class Mangle(Ingest):
             lines = f.readlines()
             #print "SRC",self.replacecol
             for line in lines:
+                linecount += 1
                 tdata = line.split(",")
                 # cast the data appropriately
                 for i, d in enumerate(tdata):
