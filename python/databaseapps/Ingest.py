@@ -123,7 +123,6 @@ class Ingest(object):
                           " already ingested, but the number of objects is" +
                           " DIFFERENT: catalog=" + str(numCatObjects) +
                           "; DB=" + str(numDbObjects) + ".")
-                return True
 
         return loaded
 
