@@ -118,8 +118,8 @@ if __name__ == '__main__':
         bandfiles = getfilelist(bandcat)
         for bandfile in bandfiles:
             try:
-                printinfo("Working on band catalog " + bfile)
                 bfile = bandfile[0]
+                printinfo("Working on band catalog " + bfile)
                 bandobj = CoaddCatalog(ingesttype='band', datafile=bfile, idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = bandobj.isLoaded()
                 if not isLoaded:
