@@ -88,13 +88,13 @@ if __name__ == '__main__':
     dbh = desdbi.DesDbi(services, section)
     print "\n###################### COADD OBJECT INGESTION ########################\n"
     try:
+        printinfo("Working on detection catalog " + detcat)
         detobj = CoaddCatalog(ingesttype='det', datafile=detcat, idDict=coaddObjectIdDict, dbh=dbh)
         isLoaded = detobj.isLoaded()
         if isLoaded:
             printinfo("Getting Coadd IDs from database\n")
             detobj.retrieveCoaddObjectIds()
         else:
-            printinfo("Preparing to load detection catalog " + detcat)
             detobj.getIDs()
             stat = detobj.executeIngest()
             retval += detobj.getstatus()
@@ -118,11 +118,11 @@ if __name__ == '__main__':
         bandfiles = getfilelist(bandcat)
         for bandfile in bandfiles:
             try:
+                printinfo("Working on band catalog " + bfile)
                 bfile = bandfile[0]
                 bandobj = CoaddCatalog(ingesttype='band', datafile=bfile, idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = bandobj.isLoaded()
                 if not isLoaded:
-                    printinfo("Preparing to load band catalog " + bfile)
                     stat = bandobj.executeIngest()
                     retval += bandobj.getstatus()
                     printinfo("Ingest of band catalog " + bfile + status[stat] + "\n")
@@ -141,10 +141,10 @@ if __name__ == '__main__':
     print "\n###################### HEALPIX INGESTION ########################\n"
     if healpix is not None:
         try:
+            printinfo("Working on healpix catalog " + healpix)
             healobj = CoaddHealpix(datafile=healpix, idDict=coaddObjectIdDict, dbh=dbh)
             isLoaded = healobj.isLoaded()
             if not isLoaded:
-                printinfo("Preparing to load healpix catalog " + healpix)
                 stat = healobj.executeIngest()
                 retval += healobj.getstatus()
                 printinfo("Ingest of healpix catalog " + healpix + status[stat] + "\n")
@@ -167,10 +167,10 @@ if __name__ == '__main__':
         wavgfiles = getfilelist(wavg)
         for file, band in wavgfiles:
             try:
+                printinfo("Working on wavg catalog " + file)
                 wavgobj = Wavg(filetype='coadd_wavg', datafile=file, idDict=coaddObjectIdDict, band=band, dbh=dbh)
                 isLoaded = wavgobj.isLoaded()
                 if not isLoaded:
-                    printinfo("Preparing to load wavg catalog " + file)
                     stat = wavgobj.executeIngest()
                     retval += wavgobj.getstatus()
                     printinfo("Ingest of wavg catalog " + file + status[stat] + "\n")
@@ -190,10 +190,10 @@ if __name__ == '__main__':
         wavgfiles = getfilelist(wavg_oclink)
         for file, band in wavgfiles:
             try:
+                printinfo("Working on wavg_oclink catalog " + file)
                 wavgobj = Wavg(filetype='coadd_wavg_oclink', datafile=file, idDict=coaddObjectIdDict, band=band, dbh=dbh)
                 isLoaded = wavgobj.isLoaded()
                 if not isLoaded:
-                    printinfo("Preparing to load wavg_oclink catalog " + file)
                     stat = wavgobj.executeIngest()
                     retval += wavgobj.getstatus()
                     printinfo("Ingest of wavg_oclink catalog " + file + status[stat] + "\n")
@@ -215,10 +215,10 @@ if __name__ == '__main__':
         ccdfiles = getfilelist(ccdgon)
         for file in ccdfiles:
             try:
+                printinfo("Working on ccdgon file " + file[0])
                 ccdobj = Mangle(datafile=file[0], filetype='mangle_csv_ccdgon', idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = ccdobj.isLoaded()
                 if not isLoaded:
-                    printinfo("Preparing to load ccdgon file " + file[0])
                     stat = ccdobj.executeIngest()
                     retval += ccdobj.getstatus()
                     printinfo("Ingest of ccdgon file " + file[0] + status[stat] + "\n")
@@ -238,10 +238,10 @@ if __name__ == '__main__':
         molyfiles = getfilelist(molygon)
         for file in molyfiles:
             try:
+                printinfo("Working on molygon file " + file[0])
                 molyobj = Mangle(datafile=file[0], filetype='mangle_csv_molygon', idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = molyobj.isLoaded()
                 if not isLoaded:
-                    printinfo("Preparing to load molygon file " + file[0])
                     stat = molyobj.executeIngest()
                     retval += molyobj.getstatus()
                     printinfo("Ingest of molygon file " + file[0] + status[stat] + "\n")
@@ -261,10 +261,10 @@ if __name__ == '__main__':
         mcfiles = getfilelist(molygon_ccdgon)
         for file in mcfiles:
             try:
+                printinfo("Working on molygon_ccdgon file " + file[0])
                 mcobj = Mangle(datafile=file[0], filetype='mangle_csv_molyccd', idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = mcobj.isLoaded()
                 if not isLoaded:
-                    printinfo("Preparing to load molygon_ccdgon file " + file[0])
                     stat = mcobj.executeIngest()
                     retval += mcobj.getstatus()
                     printinfo("Ingest of molygon_ccdgon file " + file[0] + status[stat] + "\n")
@@ -284,10 +284,10 @@ if __name__ == '__main__':
         cmfiles = getfilelist(coadd_object_molygon)
         for file in cmfiles:
             try:
+                printinfo("Working on coadd_object_molygon file " + file[0])
                 cmobj = Mangle(datafile=file[0], filetype='mangle_csv_cobjmoly', idDict=coaddObjectIdDict, dbh=dbh, replacecol=3)
                 isLoaded = cmobj.isLoaded()
                 if not isLoaded:
-                    printinfo("Preparing to load coadd_object_molygon file " + file[0])
                     stat = cmobj.executeIngest()
                     retval += cmobj.getstatus()
                     printinfo("Ingest of coadd_object_molygon file " + file[0] + status[stat] + "\n")
@@ -307,10 +307,10 @@ if __name__ == '__main__':
 
     if extinct is not None:
         try:
+            printinfo("Working on extinction catalog " + extinct)
             extobj = Extinction(datafile=extinct, idDict=coaddObjectIdDict, filetype='coadd_extinct_ebv', dbh=dbh)
             isLoaded = extobj.isLoaded()
             if not isLoaded:
-                printinfo("Preparing to load extinction catalog " + extinct)
                 stat = extobj.executeIngest()
                 retval += extobj.getstatus()
                 printinfo("Ingest of detection catalog " + extinct + status[stat] + "\n")
@@ -330,10 +330,10 @@ if __name__ == '__main__':
         exfiles = getfilelist(extinct_band)
         for file in exfiles:
             try:
+                printinfo("Working on extinction catalog " + file[0])
                 extobj = Extinction(datafile=file[0], idDict=coaddObjectIdDict, filetype='coadd_extinct_band', dbh=dbh)
                 isLoaded = extobj.isLoaded()
                 if not isLoaded:
-                    printinfo("Preparing to load extinction catalog " + file[0])
                     stat = extobj.executeIngest()
                     retval += extobj.getstatus()
                     printinfo("Ingest of detection catalog " + file[0] + status[stat] + "\n")
