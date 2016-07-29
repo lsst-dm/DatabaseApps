@@ -174,10 +174,10 @@ if __name__ == '__main__':
 
     if wavg is not None:
         wavgfiles = getfilelist(wavg)
-        for file, band in wavgfiles:
+        for file in wavgfiles:
             try:
                 printinfo("Working on wavg catalog " + file)
-                wavgobj = Wavg(filetype=args['wavg_filetype'], datafile=file, idDict=coaddObjectIdDict, band=band, dbh=dbh)
+                wavgobj = Wavg(filetype=args['wavg_filetype'], datafile=file, idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = wavgobj.isLoaded()
                 if not isLoaded:
                     stat = wavgobj.executeIngest()
@@ -197,10 +197,10 @@ if __name__ == '__main__':
 
     if wavg_oclink is not None:
         wavgfiles = getfilelist(wavg_oclink)
-        for file, band in wavgfiles:
+        for file in wavgfiles:
             try:
                 printinfo("Working on wavg_oclink catalog " + file)
-                wavgobj = Wavg(filetype=args['wavg_oclink_filetype'], datafile=file, idDict=coaddObjectIdDict, band=band, dbh=dbh)
+                wavgobj = Wavg(filetype=args['wavg_oclink_filetype'], datafile=file, idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = wavgobj.isLoaded()
                 if not isLoaded:
                     stat = wavgobj.executeIngest()
