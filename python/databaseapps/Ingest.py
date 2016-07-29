@@ -131,7 +131,7 @@ class Ingest(object):
 
         """
         if self.generateRows() == 1:
-            return
+            return 1
         for k,v in self.constants.iteritems():
             if isinstance(v, str):
                 self.constants[k] = "'" + v + "'"

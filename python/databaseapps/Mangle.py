@@ -66,7 +66,7 @@ class Mangle(Ingest):
             print "Exception raised:", e
             print "Traceback: "
             traceback.print_tb(tb)
-            print "Attempting to continue\n"
+            print " "
             self.status = 1
             return 1
 
