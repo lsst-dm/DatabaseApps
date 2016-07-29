@@ -63,6 +63,7 @@ if __name__ == '__main__':
     parser.add_argument('--coadd_object_molygon_list', action='store')
     parser.add_argument('--section', '-s', help='db section in the desservices file')
     parser.add_argument('--des_services', help='desservices file')
+    #parser.add_argument('--coadd_cat_filetype', action=store)
 
 
     args, unknown_args = parser.parse_known_args()
@@ -82,8 +83,10 @@ if __name__ == '__main__':
     section = checkParam(args,'section',False)
     services = checkParam(args,'des_services',False)
 
+
+    status = [" completed"," aborted"]
     dbh = desdbi.DesDbi(services, section)
-    printinfo("\n###################### COADD OBJECT INGESTION ########################\n")
+    print "\n###################### COADD OBJECT INGESTION ########################\n"
     if detcat is not None:
         try:
             detobj = CoaddCatalog(ingesttype='det', datafile=detcat, idDict=coaddObjectIdDict, dbh=dbh)
@@ -94,9 +97,9 @@ if __name__ == '__main__':
             else:
                 printinfo("Preparing to load detection catalog " + detcat)
                 detobj.getIDs()
-                detobj.executeIngest()
+                stat = detobj.executeIngest()
                 retval += detobj.getstatus()
-                printinfo("Ingest of detection catalog " + detcat + " completed\n")
+                printinfo("Ingest of detection catalog " + detcat + status[stat] + "\n")
         except:
             se = sys.exc_info()
             e = se[1]
@@ -104,7 +107,7 @@ if __name__ == '__main__':
             print "Exception raised:", e
             print "Traceback: "
             traceback.print_tb(tb)
-            print "Attempting to continue\n"
+            print " "
             retval += 1
 
     # do a sanity check, as these numbers are needed for the following steps
@@ -121,9 +124,9 @@ if __name__ == '__main__':
                 isLoaded = bandobj.isLoaded()
                 if not isLoaded:
                     printinfo("Preparing to load band catalog " + bfile)
-                    bandobj.executeIngest()
+                    stat = bandobj.executeIngest()
                     retval += bandobj.getstatus()
-                    printinfo("Ingest of band catalog " + bfile + " completed\n")
+                    printinfo("Ingest of band catalog " + bfile + status[stat] + "\n")
             except:
                 se = sys.exc_info()
                 e = se[1]
@@ -131,19 +134,19 @@ if __name__ == '__main__':
                 print "Exception raised:", e
                 print "Traceback: "
                 traceback.print_tb(tb)
-                print "Attempting to continue\n"
+                print " "
                 retval += 1
 
-    printinfo("\n###################### HEALPIX INGESTION ########################\n")
+    print "\n###################### HEALPIX INGESTION ########################\n"
     if healpix is not None:
         try:
             healobj = CoaddHealpix(datafile=healpix, idDict=coaddObjectIdDict, dbh=dbh)
             isLoaded = healobj.isLoaded()
             if not isLoaded:
                 printinfo("Preparing to load healpix catalog " + healpix)
-                healobj.executeIngest()
+                stat = healobj.executeIngest()
                 retval += healobj.getstatus()
-                printinfo("Ingest of healpix catalog " + healpix + " completed\n")
+                printinfo("Ingest of healpix catalog " + healpix + status[stat] + "\n")
         except:
             se = sys.exc_info()
             e = se[1]
@@ -151,10 +154,10 @@ if __name__ == '__main__':
             print "Exception raised:", e
             print "Traceback: "
             traceback.print_tb(tb)
-            print "Attempting to continue\n"
+            print " "
             retval += 1
 
-    printinfo("\n###################### WEIGHTED AVERAGE INGESTION ########################\n")
+    print "\n###################### WEIGHTED AVERAGE INGESTION ########################\n"
 
     if wavg is not None:
         wavgfiles = getfilelist(wavg)
@@ -164,9 +167,9 @@ if __name__ == '__main__':
                 isLoaded = wavgobj.isLoaded()
                 if not isLoaded:
                     printinfo("Preparing to load wavg catalog " + file)
-                    wavgobj.executeIngest()
+                    stat = wavgobj.executeIngest()
                     retval += wavgobj.getstatus()
-                    printinfo("Ingest of wavg catalog " + file + " completed\n")
+                    printinfo("Ingest of wavg catalog " + file + status[stat] + "\n")
             except:
                 se = sys.exc_info()
                 e = se[1]
@@ -174,7 +177,7 @@ if __name__ == '__main__':
                 print "Exception raised:", e
                 print "Traceback: "
                 traceback.print_tb(tb)
-                print "Attempting to continue\n"
+                print " "
                 retval += 1
 
     if wavg_oclink is not None:
@@ -185,9 +188,9 @@ if __name__ == '__main__':
                 isLoaded = wavgobj.isLoaded()
                 if not isLoaded:
                     printinfo("Preparing to load wavg_oclink catalog " + file)
-                    wavgobj.executeIngest()
+                    stat = wavgobj.executeIngest()
                     retval += wavgobj.getstatus()
-                    printinfo("Ingest of wavg_oclink catalog " + file + " completed\n")
+                    printinfo("Ingest of wavg_oclink catalog " + file + status[stat] + "\n")
             except:
                 se = sys.exc_info()
                 e = se[1]
@@ -195,10 +198,10 @@ if __name__ == '__main__':
                 print "Exception raised:", e
                 print "Traceback: "
                 traceback.print_tb(tb)
-                print "Attempting to continue\n"
+                print " "
                 retval += 1
 
-    printinfo("\n###################### MANGLE INGESTION ########################\n")
+    print "\n###################### MANGLE INGESTION ########################\n"
 
     if ccdgon is not None:
         ccdfiles = getfilelist(ccdgon)
@@ -208,9 +211,9 @@ if __name__ == '__main__':
                 isLoaded = ccdobj.isLoaded()
                 if not isLoaded:
                     printinfo("Preparing to load ccdgon file " + file[0])
-                    ccdobj.executeIngest()
+                    stat = ccdobj.executeIngest()
                     retval += ccdobj.getstatus()
-                    printinfo("Ingest of ccdgon file " + file[0] + " completed\n")
+                    printinfo("Ingest of ccdgon file " + file[0] + status[stat] + "\n")
             except:
                 se = sys.exc_info()
                 e = se[1]
@@ -218,7 +221,7 @@ if __name__ == '__main__':
                 print "Exception raised:", e
                 print "Traceback: "
                 traceback.print_tb(tb)
-                print "Attempting to continue\n"
+                print " "
                 retval += 1
 
     if molygon is not None:
@@ -229,9 +232,9 @@ if __name__ == '__main__':
                 isLoaded = molyobj.isLoaded()
                 if not isLoaded:
                     printinfo("Preparing to load molygon file " + file[0])
-                    molyobj.executeIngest()
+                    stat = molyobj.executeIngest()
                     retval += molyobj.getstatus()
-                    printinfo("Ingest of molygon file " + file[0] + " completed\n")
+                    printinfo("Ingest of molygon file " + file[0] + status[stat] + "\n")
             except:
                 se = sys.exc_info()
                 e = se[1]
@@ -239,7 +242,7 @@ if __name__ == '__main__':
                 print "Exception raised:", e
                 print "Traceback: "
                 traceback.print_tb(tb)
-                print "Attempting to continue\n"
+                print " "
                 retval += 1
 
     if molygon_ccdgon is not None:
@@ -250,9 +253,9 @@ if __name__ == '__main__':
                 isLoaded = mcobj.isLoaded()
                 if not isLoaded:
                     printinfo("Preparing to load molygon_ccdgon file " + file[0])
-                    mcobj.executeIngest()
+                    stat = mcobj.executeIngest()
                     retval += mcobj.getstatus()
-                    printinfo("Ingest of molygon_ccdgon file " + file[0] + " completed\n")
+                    printinfo("Ingest of molygon_ccdgon file " + file[0] + status[stat] + "\n")
             except:
                 se = sys.exc_info()
                 e = se[1]
@@ -260,7 +263,7 @@ if __name__ == '__main__':
                 print "Exception raised:", e
                 print "Traceback: "
                 traceback.print_tb(tb)
-                print "Attempting to continue\n"
+                print " "
                 retval += 1
 
     if coadd_object_molygon is not None:
@@ -271,9 +274,9 @@ if __name__ == '__main__':
                 isLoaded = cmobj.isLoaded()
                 if not isLoaded:
                     printinfo("Preparing to load coadd_object_molygon file " + file[0])
-                    cmobj.executeIngest()
+                    stat = cmobj.executeIngest()
                     retval += cmobj.getstatus()
-                    printinfo("Ingest of coadd_object_molygon file " + file[0] + " completed\n")
+                    printinfo("Ingest of coadd_object_molygon file " + file[0] + status[stat] + "\n")
             except:
                 se = sys.exc_info()
                 e = se[1]
@@ -281,10 +284,10 @@ if __name__ == '__main__':
                 print "Exception raised:", e
                 print "Traceback: "
                 traceback.print_tb(tb)
-                print "Attempting to continue\n"
+                print " "
                 retval += 1
 
-    printinfo("\n###################### EXTINCTION INGESTION ########################\n")
+    print "\n###################### EXTINCTION INGESTION ########################\n"
 
     if extinct is not None:
         try:
@@ -292,9 +295,9 @@ if __name__ == '__main__':
             isLoaded = extobj.isLoaded()
             if not isLoaded:
                 printinfo("Preparing to load extinction catalog " + extinct)
-                extobj.executeIngest()
+                stat = extobj.executeIngest()
                 retval += extobj.getstatus()
-                printinfo("Ingest of detection catalog " + extinct + " completed\n")
+                printinfo("Ingest of detection catalog " + extinct + status[stat] + "\n")
         except:
             se = sys.exc_info()
             e = se[1]
@@ -302,7 +305,7 @@ if __name__ == '__main__':
             print "Exception raised:", e
             print "Traceback: "
             traceback.print_tb(tb)
-            print "Attempting to continue\n"
+            print " "
             retval += 1
 
     if extinct_band is not None:
@@ -313,9 +316,9 @@ if __name__ == '__main__':
                 isLoaded = extobj.isLoaded()
                 if not isLoaded:
                     printinfo("Preparing to load extinction catalog " + file[0])
-                    extobj.executeIngest()
+                    stat = extobj.executeIngest()
                     retval += extobj.getstatus()
-                    printinfo("Ingest of detection catalog " + file[0] + " completed\n")
+                    printinfo("Ingest of detection catalog " + file[0] + status[stat] + "\n")
             except:
                 se = sys.exc_info()
                 e = se[1]
@@ -323,6 +326,6 @@ if __name__ == '__main__':
                 print "Exception raised:", e
                 print "Traceback: "
                 traceback.print_tb(tb)
-                print "Attempting to continue\n"
+                print " "
                 retval += 1
     exit(retval)

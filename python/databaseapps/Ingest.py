@@ -130,7 +130,8 @@ class Ingest(object):
         """ Generic method to insert the data into the database
 
         """
-        self.generateRows()
+        if self.generateRows() == 1:
+            return
         for k,v in self.constants.iteritems():
             if isinstance(v, str):
                 self.constants[k] = "'" + v + "'"
@@ -159,6 +160,7 @@ class Ingest(object):
             cursor.close()
             self.dbh.commit()
             self.info("Inserted %d rows into table %s" % (len(self.sqldata), self.targettable))
+            return 0
         except:
             se = sys.exc_info()
             e = se[1]
@@ -166,8 +168,9 @@ class Ingest(object):
             print "Exception raised: ",e
             print "Traceback: "
             traceback.print_tb(tb)
-            print "Attempting to continue"
+            print " "
             self.dbh.rollback()
+            return 1
 
 
 class Entry(object):

@@ -33,6 +33,7 @@ class FitsIngest(Ingest):
         """ Convert the input fits data into a list of lists
 
         """
+        retval = 0
         lastrow = self.fits[self.objhdu].get_nrows()
 
         # get the column headers to ingest
@@ -117,9 +118,10 @@ class FitsIngest(Ingest):
             print "Attempting to continue"
             self.sqldata = []
             self.status = 1
+            retval = 1
         finally:
             if self.generateID:
                 self.dbDict[self.objhdu]['ID'] = Entry(column_name='ID', position=0)
                 self.orderedColumns = ['ID'] + self.orderedColumns
-
+            return retval
 

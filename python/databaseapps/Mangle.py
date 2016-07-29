@@ -58,6 +58,7 @@ class Mangle(Ingest):
                     types.append(str)
             self.parseCSV(self.fullfilename, types)
             self.orderedColumns = self.dbDict[self.hdu].keys()
+            return 0
         except:
             se = sys.exc_info()
             e = se[1]
@@ -67,6 +68,7 @@ class Mangle(Ingest):
             traceback.print_tb(tb)
             print "Attempting to continue\n"
             self.status = 1
+            return 1
 
     def getNumObjects(self):
         """ Get the number of objects to ingest
