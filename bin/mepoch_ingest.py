@@ -88,7 +88,7 @@ if __name__ == '__main__':
             detobj = CoaddCatalog(ingesttype='det', datafile=detcat, idDict=coaddObjectIdDict, dbh=dbh)
             isLoaded = detobj.isLoaded()
             if isLoaded:
-                printinfo("Getting Coadd IDs from database\n" % (detcat))
+                printinfo("Getting Coadd IDs from database\n")
                 detobj.retrieveCoaddObjectIds()
             else:
                 printinfo("Preparing to load detection catalog " + detcat)
@@ -105,6 +105,11 @@ if __name__ == '__main__':
             traceback.print_tb(tb)
             print "Attempting to continue\n"
             retval += 1
+
+    # do a sanity check, as these numbers are needed for the following steps
+    if len(coaddObjectIdDict) == 0:
+        print "Coadd Object Dict is empty, cannot continue"
+        exit(1)
 
     if bandcat is not None:
         bandfiles = getfilelist(bandcat)
@@ -128,10 +133,6 @@ if __name__ == '__main__':
                 print "Attempting to continue\n"
                 retval += 1
 
-    # do a sanity check, as these numbers are needed for the following steps
-    if len(coaddObjectIdDict) == 0:
-        print "Coadd Object Dict is empty, cannot continue"
-        exit(1)
 
     if healpix is not None:
         try:
