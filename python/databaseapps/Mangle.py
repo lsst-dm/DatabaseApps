@@ -22,26 +22,31 @@ class Mangle(Ingest):
         """ Parse a CSV file, casting as needed into a list of lists
 
         """
-        f = open(filename, 'r')
-        lines = f.readlines()
-        #print "SRC",self.replacecol
-        for line in lines:
-            tdata = line.split(",")
-            # cast the data appropriately
-            for i, d in enumerate(tdata):
-                if self.coadd_id is not None and i == self.coadd_id:
-                    tdata[i] = self.idDict[types[i](d)]
-                else:
-                    tdata[i] = types[i](d)
-            if self.replacecol is not None and tdata[self.replacecol] == -1:
-                tdata[self.replacecol] = None
-            self.sqldata.append(tdata)
-        if miscutils.fwdebug_check(10, "MANGLEINGEST_DEBUG"):
-            miscutils.fwdebug_print(self.shortfilename)
-            for d in self.sqldata:
-                miscutils.fwdebug_print(d)
-        f.close()
-
+        linecount = 0
+        try:
+            f = open(filename, 'r')
+            lines = f.readlines()
+            #print "SRC",self.replacecol
+            for line in lines:
+                tdata = line.split(",")
+                # cast the data appropriately
+                for i, d in enumerate(tdata):
+                    if self.coadd_id is not None and i == self.coadd_id:
+                        tdata[i] = self.idDict[types[i](d)]
+                    else:
+                        tdata[i] = types[i](d)
+                if self.replacecol is not None and tdata[self.replacecol] == -1:
+                    tdata[self.replacecol] = None
+                self.sqldata.append(tdata)
+            if miscutils.fwdebug_check(10, "MANGLEINGEST_DEBUG"):
+                miscutils.fwdebug_print(self.shortfilename)
+                for d in self.sqldata:
+                    miscutils.fwdebug_print(d)
+            f.close()
+        except:
+            printinfo("Error in line %i of %s" % (linecount, self.shortfilename))
+            raise
+            
     def generateRows(self):
         """ Method to convert the input data into a list of lists
 
