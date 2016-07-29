@@ -30,6 +30,8 @@ class Mangle(Ingest):
             for line in lines:
                 linecount += 1
                 tdata = line.split(",")
+                if len(tdata) != len(types):
+                    raise Exception("Incorrect number of columns.")
                 # cast the data appropriately
                 for i, d in enumerate(tdata):
                     if self.coadd_id is not None and i == self.coadd_id:
