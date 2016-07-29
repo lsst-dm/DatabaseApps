@@ -1,6 +1,7 @@
 from Ingest import Ingest
 import sys
 import traceback
+from despymisc import miscutils
 
 class Mangle(Ingest):
     """ Class to ingest the outputs from a Mangle run
@@ -32,12 +33,13 @@ class Mangle(Ingest):
                     tdata[i] = self.idDict[types[i](d)]
                 else:
                     tdata[i] = types[i](d)
-            #if self.replacecol is not None:
-            #    print len(tdata)
-            #    print tdata
             if self.replacecol is not None and tdata[self.replacecol] == -1:
                 tdata[self.replacecol] = None
             self.sqldata.append(tdata)
+        if miscutils.fwdebug_check(10, "MANGLEINGEST_DEBUG"):
+            miscutils.fwdebug_print(self.shortfilename)
+            for d in self.sqldata:
+                miscutils.fwdebug_print(d)
         f.close()
 
     def generateRows(self):
