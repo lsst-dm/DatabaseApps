@@ -99,7 +99,7 @@ class FitsIngest(Ingest):
                                 outrow.append(self.idDict[row[idx]])
                             except KeyError:
                                 miscutils.fwdebug_print("ERROR: Coadd number (%i) specified that does not have a corresponding coadd id, found in row %i." % (row[idx], linecount))
-                                raise
+                                return 1
 
                         # if this column is an array of values
                         elif datatypes[self.orderedColumns[idx]].subdtype:
