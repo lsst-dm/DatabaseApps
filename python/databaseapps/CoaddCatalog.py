@@ -21,7 +21,7 @@ class CoaddCatalog(FitsIngest):
     def getIDs(self):
         # retrieve all coadd objects ids needed for this band's ingest as
         # one list
-        self.info("Grabbing block of coadd object ids")
+        self.info("Grabbing block of coadd object ids from")
         coadd_recs = self.getCoaddObjectIds(self.fits[self.objhdu].get_nrows())
         self.coadd_ids = [item[0] for item in coadd_recs]
 

@@ -88,7 +88,7 @@ if __name__ == '__main__':
             detobj = CoaddCatalog(ingesttype='det', datafile=detcat, idDict=coaddObjectIdDict, dbh=dbh)
             isLoaded = detobj.isLoaded()
             if isLoaded:
-                printinfo("Det catalog %s already loaded, getting Coadd IDs from database\n" % (detcat))
+                printinfo("Getting Coadd IDs from database\n" % (detcat))
                 detobj.retrieveCoaddObjectIds()
             else:
                 printinfo("Preparing to load detection catalog " + detcat)
@@ -113,9 +113,7 @@ if __name__ == '__main__':
                 bfile = bandfile[0]
                 bandobj = CoaddCatalog(ingesttype='band', datafile=bfile, idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = bandobj.isLoaded()
-                if isLoaded:
-                    printinfo("Band catalog %s already loaded, continuing" % (bfile))
-                else:
+                if not isLoaded:
                     printinfo("Preparing to load band catalog " + bfile)
                     bandobj.executeIngest()
                     retval += bandobj.getstatus()
@@ -139,9 +137,7 @@ if __name__ == '__main__':
         try:
             healobj = CoaddHealpix(datafile=healpix, idDict=coaddObjectIdDict, dbh=dbh)
             isLoaded = healobj.isLoaded()
-            if isLoaded:
-                printinfo("Healpix catalog %s already loaded, continuing\n" % (healpix))
-            else:
+            if not isLoaded:
                 printinfo("Preparing to load healpix catalog " + healpix)
                 healobj.executeIngest()
                 retval += healobj.getstatus()
@@ -162,9 +158,7 @@ if __name__ == '__main__':
             try:
                 wavgobj = Wavg(filetype='coadd_wavg', datafile=file, idDict=coaddObjectIdDict, band=band, dbh=dbh)
                 isLoaded = wavgobj.isLoaded()
-                if isLoaded:
-                    printinfo("Wavg catalog %s already loaded, continuing\n" % (file))
-                else:
+                if not isLoaded:
                     printinfo("Preparing to load wavg catalog " + file)
                     wavgobj.executeIngest()
                     retval += wavgobj.getstatus()
@@ -185,9 +179,7 @@ if __name__ == '__main__':
             try:
                 wavgobj = Wavg(filetype='coadd_wavg_oclink', datafile=file, idDict=coaddObjectIdDict, band=band, dbh=dbh)
                 isLoaded = wavgobj.isLoaded()
-                if isLoaded:
-                    printinfo("Wavg_oclink catalog %s already loaded, continuing\n" % (file))
-                else:
+                if not isLoaded:
                     printinfo("Preparing to load wavg_oclink catalog " + file)
                     wavgobj.executeIngest()
                     retval += wavgobj.getstatus()
@@ -208,9 +200,7 @@ if __name__ == '__main__':
             try:
                 ccdobj = Mangle(datafile=file[0], filetype='mangle_csv_ccdgon', idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = ccdobj.isLoaded()
-                if isLoaded:
-                    printinfo("ccdgon catalog %s already loaded, continuing\n" % (file[0]))
-                else:
+                if not isLoaded:
                     printinfo("Preparing to load ccdgon file " + file[0])
                     ccdobj.executeIngest()
                     retval += ccdobj.getstatus()
@@ -231,9 +221,7 @@ if __name__ == '__main__':
             try:
                 molyobj = Mangle(datafile=file[0], filetype='mangle_csv_molygon', idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = molyobj.isLoaded()
-                if isLoaded:
-                    printinfo("molygon catalog %s already loaded, continuing\n" % (file[0]))
-                else:
+                if not isLoaded:
                     printinfo("Preparing to load molygon file " + file[0])
                     molyobj.executeIngest()
                     retval += molyobj.getstatus()
@@ -254,9 +242,7 @@ if __name__ == '__main__':
             try:
                 mcobj = Mangle(datafile=file[0], filetype='mangle_csv_molyccd', idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = mcobj.isLoaded()
-                if isLoaded:
-                    printinfo("molygon_ccdgon catalog %s already loaded, continuing\n" % (file[0]))
-                else:
+                if not isLoaded:
                     printinfo("Preparing to load molygon_ccdgon file " + file[0])
                     mcobj.executeIngest()
                     retval += mcobj.getstatus()
@@ -277,9 +263,7 @@ if __name__ == '__main__':
             try:
                 cmobj = Mangle(datafile=file[0], filetype='mangle_csv_cobjmoly', idDict=coaddObjectIdDict, dbh=dbh, replacecol=3)
                 isLoaded = cmobj.isLoaded()
-                if isLoaded:
-                    printinfo("coadd_object_molygon catalog %s already loaded, continuing\n" % (file[0]))
-                else:
+                if not isLoaded:
                     printinfo("Preparing to load coadd_object_molygon file " + file[0])
                     cmobj.executeIngest()
                     retval += cmobj.getstatus()
@@ -298,9 +282,7 @@ if __name__ == '__main__':
         try:
             extobj = Extinction(datafile=extinct, idDict=coaddObjectIdDict, filetype='coadd_extinct_ebv', dbh=dbh)
             isLoaded = extobj.isLoaded()
-            if isLoaded:
-                printinfo("Extinction catalog %s already loaded, continuing\n" % (extinct))
-            else:
+            if not isLoaded:
                 printinfo("Preparing to load extinction catalog " + extinct)
                 extobj.executeIngest()
                 retval += extobj.getstatus()
@@ -321,9 +303,7 @@ if __name__ == '__main__':
             try:
                 extobj = Extinction(datafile=file[0], idDict=coaddObjectIdDict, filetype='coadd_extinct_band', dbh=dbh)
                 isLoaded = extobj.isLoaded()
-                if isLoaded:
-                    printinfo("Extinction catalog %s already loaded, continuing\n" % (file[0]))
-                else:
+                if not isLoaded:
                     printinfo("Preparing to load extinction catalog " + file[0])
                     extobj.executeIngest()
                     retval += extobj.getstatus()
