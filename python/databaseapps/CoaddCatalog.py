@@ -4,8 +4,8 @@ class CoaddCatalog(FitsIngest):
     """ Class for ingesting coadd catalogs
 
     """
-    def __init__(self, ingesttype, datafile, idDict, dbh):
-        FitsIngest.__init__(self, 'coadd_cat', datafile, idDict, True, dbh)
+    def __init__(self, ingesttype, filetype, datafile, idDict, dbh):
+        FitsIngest.__init__(self, filetype, datafile, idDict, True, dbh)
 
         self.catalogtable = 'CATALOG'
         self.idsequence = 'COADD_OBJECT_SEQ'

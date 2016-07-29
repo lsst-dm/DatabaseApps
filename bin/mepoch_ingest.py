@@ -63,7 +63,16 @@ if __name__ == '__main__':
     parser.add_argument('--coadd_object_molygon_list', action='store')
     parser.add_argument('--section', '-s', help='db section in the desservices file')
     parser.add_argument('--des_services', help='desservices file')
-    #parser.add_argument('--coadd_cat_filetype', action=store)
+    parser.add_argument('--coadd_object_filetype', action=store, default='coadd_cat')
+    parser.add_argument('--coadd_hpix_filetype', action=store, defalt='coadd_hpix')
+    parser.add_argument('--wavg_filetype', action=store, default='coadd_wavg')
+    parser.add_argument('--wavg_oclink_filetype', action=store, default='coadd_wavg_oclink')
+    parser.add_argument('--ccdgon_filetype', action=store, default='mangle_csv_ccdgon')
+    parser.add_argument('--molygon_filetype', action=store, default='mangle_csv_molygon')
+    parser.add_argument('--molygon_ccdgon_filetype', action=store, default='mangle_csv_molyccd')
+    parser.add_argument('--coadd_object_molygon_filetype', action=store, default='mangle_csv_cobjmoly')
+    parser.add_argument('--extinct_filetype', action=store, default='coadd_extinct_ebv')
+    parser.add_argument('--extinct_band_filetype', action=store, default='coadd_extinct_band')
 
 
     args, unknown_args = parser.parse_known_args()
@@ -89,7 +98,7 @@ if __name__ == '__main__':
     print "\n###################### COADD OBJECT INGESTION ########################\n"
     try:
         printinfo("Working on detection catalog " + detcat)
-        detobj = CoaddCatalog(ingesttype='det', datafile=detcat, idDict=coaddObjectIdDict, dbh=dbh)
+        detobj = CoaddCatalog(ingesttype='det', filetype=args['coadd_object_filetyp'], datafile=detcat, idDict=coaddObjectIdDict, dbh=dbh)
         isLoaded = detobj.isLoaded()
         if isLoaded:
             printinfo("Getting Coadd IDs from database\n")
@@ -120,7 +129,7 @@ if __name__ == '__main__':
             try:
                 bfile = bandfile[0]
                 printinfo("Working on band catalog " + bfile)
-                bandobj = CoaddCatalog(ingesttype='band', datafile=bfile, idDict=coaddObjectIdDict, dbh=dbh)
+                bandobj = CoaddCatalog(ingesttype='band', filetype=args['coadd_object_filetyp'], datafile=bfile, idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = bandobj.isLoaded()
                 if not isLoaded:
                     stat = bandobj.executeIngest()
@@ -142,7 +151,7 @@ if __name__ == '__main__':
     if healpix is not None:
         try:
             printinfo("Working on healpix catalog " + healpix)
-            healobj = CoaddHealpix(datafile=healpix, idDict=coaddObjectIdDict, dbh=dbh)
+            healobj = CoaddHealpix(filetype=args['coadd_hpix_filetype'], datafile=healpix, idDict=coaddObjectIdDict, dbh=dbh)
             isLoaded = healobj.isLoaded()
             if not isLoaded:
                 stat = healobj.executeIngest()
@@ -168,7 +177,7 @@ if __name__ == '__main__':
         for file, band in wavgfiles:
             try:
                 printinfo("Working on wavg catalog " + file)
-                wavgobj = Wavg(filetype='coadd_wavg', datafile=file, idDict=coaddObjectIdDict, band=band, dbh=dbh)
+                wavgobj = Wavg(filetype=args['wavg_filetype'], datafile=file, idDict=coaddObjectIdDict, band=band, dbh=dbh)
                 isLoaded = wavgobj.isLoaded()
                 if not isLoaded:
                     stat = wavgobj.executeIngest()
@@ -191,7 +200,7 @@ if __name__ == '__main__':
         for file, band in wavgfiles:
             try:
                 printinfo("Working on wavg_oclink catalog " + file)
-                wavgobj = Wavg(filetype='coadd_wavg_oclink', datafile=file, idDict=coaddObjectIdDict, band=band, dbh=dbh)
+                wavgobj = Wavg(filetype=args['wavg_oclink_filetype'], datafile=file, idDict=coaddObjectIdDict, band=band, dbh=dbh)
                 isLoaded = wavgobj.isLoaded()
                 if not isLoaded:
                     stat = wavgobj.executeIngest()
@@ -216,7 +225,7 @@ if __name__ == '__main__':
         for file in ccdfiles:
             try:
                 printinfo("Working on ccdgon file " + file[0])
-                ccdobj = Mangle(datafile=file[0], filetype='mangle_csv_ccdgon', idDict=coaddObjectIdDict, dbh=dbh)
+                ccdobj = Mangle(datafile=file[0], filetype=args['ccdgon_filetype'], idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = ccdobj.isLoaded()
                 if not isLoaded:
                     stat = ccdobj.executeIngest()
@@ -239,7 +248,7 @@ if __name__ == '__main__':
         for file in molyfiles:
             try:
                 printinfo("Working on molygon file " + file[0])
-                molyobj = Mangle(datafile=file[0], filetype='mangle_csv_molygon', idDict=coaddObjectIdDict, dbh=dbh)
+                molyobj = Mangle(datafile=file[0], filetype=args['molygon_filetype'], idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = molyobj.isLoaded()
                 if not isLoaded:
                     stat = molyobj.executeIngest()
@@ -262,7 +271,7 @@ if __name__ == '__main__':
         for file in mcfiles:
             try:
                 printinfo("Working on molygon_ccdgon file " + file[0])
-                mcobj = Mangle(datafile=file[0], filetype='mangle_csv_molyccd', idDict=coaddObjectIdDict, dbh=dbh)
+                mcobj = Mangle(datafile=file[0], filetype=args['molygon_ccdgon_filetype'], idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = mcobj.isLoaded()
                 if not isLoaded:
                     stat = mcobj.executeIngest()
@@ -285,7 +294,7 @@ if __name__ == '__main__':
         for file in cmfiles:
             try:
                 printinfo("Working on coadd_object_molygon file " + file[0])
-                cmobj = Mangle(datafile=file[0], filetype='mangle_csv_cobjmoly', idDict=coaddObjectIdDict, dbh=dbh, replacecol=3, checkcount=True)
+                cmobj = Mangle(datafile=file[0], filetype=args['coadd_object_molygon_filetype'], idDict=coaddObjectIdDict, dbh=dbh, replacecol=3, checkcount=True)
                 isLoaded = cmobj.isLoaded()
                 if not isLoaded:
                     stat = cmobj.executeIngest()
@@ -308,7 +317,7 @@ if __name__ == '__main__':
     if extinct is not None:
         try:
             printinfo("Working on extinction catalog " + extinct)
-            extobj = Extinction(datafile=extinct, idDict=coaddObjectIdDict, filetype='coadd_extinct_ebv', dbh=dbh)
+            extobj = Extinction(datafile=extinct, idDict=coaddObjectIdDict, filetype=args['extinct_filetype'], dbh=dbh)
             isLoaded = extobj.isLoaded()
             if not isLoaded:
                 stat = extobj.executeIngest()
@@ -331,7 +340,7 @@ if __name__ == '__main__':
         for file in exfiles:
             try:
                 printinfo("Working on extinction catalog " + file[0])
-                extobj = Extinction(datafile=file[0], idDict=coaddObjectIdDict, filetype='coadd_extinct_band', dbh=dbh)
+                extobj = Extinction(datafile=file[0], idDict=coaddObjectIdDict, filetype=args['extinct_band_filetype'], dbh=dbh)
                 isLoaded = extobj.isLoaded()
                 if not isLoaded:
                     stat = extobj.executeIngest()
