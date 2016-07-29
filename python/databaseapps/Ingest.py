@@ -1,6 +1,7 @@
 import time
 from collections import OrderedDict
 from ingestutils import IngestUtils as ingestutils
+from despymisc import miscutils
 import traceback
 import sys
 
@@ -118,11 +119,11 @@ class Ingest(object):
                           " already ingested with the same number of" +
                           " objects. Skipping.")
             else:
-                errstr = ("ERROR: file " + self.fullfilename +
+                miscutils.fwdebug_print(("ERROR: file " + self.fullfilename +
                           " already ingested, but the number of objects is" +
                           " DIFFERENT: catalog=" + str(numCatObjects) +
                           "; DB=" + str(numDbObjects) + ".")
-                raise Exception(errstr)
+                return True
 
         return loaded
 
