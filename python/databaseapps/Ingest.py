@@ -172,6 +172,13 @@ class Ingest(object):
             self.dbh.rollback()
             return 1
 
+    def printinfo(self, msg):
+        """ Generic print statement with time stamp
+
+        """
+        print time.strftime(CoaddCatalog.debugDateFormat) + " - " + msg
+
+
 
 class Entry(object):
     __slots__ = ["hdu", "attribute_name", "position", "column_name", "dtype"]
@@ -201,10 +208,3 @@ class Entry(object):
         """
         self.column_name.append(column_name)
         self.position.append(position)
-
-    def printinfo(self, msg):
-        """ Generic print statement with time stamp
-
-        """
-        print time.strftime(CoaddCatalog.debugDateFormat) + " - " + msg
-
