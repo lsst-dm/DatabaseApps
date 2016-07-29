@@ -2,6 +2,7 @@ import fitsio
 import sys
 import traceback
 from Ingest import Ingest, Entry
+from despymisc import miscutils
 
 class FitsIngest(Ingest):
     # maximum number of rows to grap from a fits table at a time
@@ -38,7 +39,7 @@ class FitsIngest(Ingest):
 
         # get the column headers to ingest
         attrsToCollect = self.dbDict[self.objhdu]
-
+        linecount = 0
         try:
             attrs = attrsToCollect.keys()
 
@@ -69,6 +70,7 @@ class FitsIngest(Ingest):
                         )
 
                 for row in data:
+                    linecount += 1
                     # IMPORTANT! Must convert numpy array to python list, or
                     # suffer big performance hit. This is due to numpy bug
                     # fixed in more recent version than one in EUPS.
@@ -109,13 +111,14 @@ class FitsIngest(Ingest):
                             outrow.append(row[idx])
                     self.sqldata.append(outrow)
         except:
+            miscutils.fwdebug_print("Possible error in line %i of %s" % (linecount, self.shortfilename))
             se = sys.exc_info()
             e = se[1]
             tb = se[2]
             print "Exception raised: ", e
             print "Traceback: "
             traceback.print_tb(tb)
-            print "Attempting to continue"
+            print " "
             self.sqldata = []
             self.status = 1
             retval = 1
