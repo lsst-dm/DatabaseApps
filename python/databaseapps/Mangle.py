@@ -44,7 +44,7 @@ class Mangle(Ingest):
                     miscutils.fwdebug_print(d)
             f.close()
         except:
-            self.printinfo("Error in line %i of %s" % (linecount, self.shortfilename))
+            miscutils.fwdebug_print("Error in line %i of %s" % (linecount, self.shortfilename))
             raise
 
     def generateRows(self):
