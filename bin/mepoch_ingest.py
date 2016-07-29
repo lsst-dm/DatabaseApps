@@ -51,7 +51,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Ingest coadd objects from fits catalogs')
     parser.add_argument('--bandcat_list', action='store')
-    parser.add_argument('--detcat', action='store')
+    parser.add_argument('--detcat', action='store', required=True)
     parser.add_argument('--extinct', action='store')
     parser.add_argument('--extinct_band_list', action='store')
     parser.add_argument('--healpix', action='store')
@@ -69,17 +69,17 @@ if __name__ == '__main__':
     args, unknown_args = parser.parse_known_args()
     args = vars(args)
 
-    bandcat = checkParam(args,'bandcat_list',True)
+    bandcat = checkParam(args,'bandcat_list',False)
     detcat = checkParam(args,'detcat',True)
-    extinct = checkParam(args,'extinct',True)
-    extinct_band = checkParam(args, 'extinct_band_list', True)
-    healpix = checkParam(args,'healpix',True)
-    wavg = checkParam(args,'wavg_list',True)
-    wavg_oclink = checkParam(args,'wavg_oclink_list',True)
-    ccdgon = checkParam(args,'ccdgon_list',True)
-    molygon = checkParam(args,'molygon_list',True)
-    molygon_ccdgon = checkParam(args,'molygon_ccdgon_list',True)
-    coadd_object_molygon = checkParam(args,'coadd_object_molygon_list',True)
+    extinct = checkParam(args,'extinct',False)
+    extinct_band = checkParam(args, 'extinct_band_list', False)
+    healpix = checkParam(args,'healpix',False)
+    wavg = checkParam(args,'wavg_list',False)
+    wavg_oclink = checkParam(args,'wavg_oclink_list',False)
+    ccdgon = checkParam(args,'ccdgon_list',False)
+    molygon = checkParam(args,'molygon_list',False)
+    molygon_ccdgon = checkParam(args,'molygon_ccdgon_list',False)
+    coadd_object_molygon = checkParam(args,'coadd_object_molygon_list',False)
     section = checkParam(args,'section',False)
     services = checkParam(args,'des_services',False)
 
@@ -87,28 +87,27 @@ if __name__ == '__main__':
     status = [" completed"," aborted"]
     dbh = desdbi.DesDbi(services, section)
     print "\n###################### COADD OBJECT INGESTION ########################\n"
-    if detcat is not None:
-        try:
-            detobj = CoaddCatalog(ingesttype='det', datafile=detcat, idDict=coaddObjectIdDict, dbh=dbh)
-            isLoaded = detobj.isLoaded()
-            if isLoaded:
-                printinfo("Getting Coadd IDs from database\n")
-                detobj.retrieveCoaddObjectIds()
-            else:
-                printinfo("Preparing to load detection catalog " + detcat)
-                detobj.getIDs()
-                stat = detobj.executeIngest()
-                retval += detobj.getstatus()
-                printinfo("Ingest of detection catalog " + detcat + status[stat] + "\n")
-        except:
-            se = sys.exc_info()
-            e = se[1]
-            tb = se[2]
-            print "Exception raised:", e
-            print "Traceback: "
-            traceback.print_tb(tb)
-            print " "
-            retval += 1
+    try:
+        detobj = CoaddCatalog(ingesttype='det', datafile=detcat, idDict=coaddObjectIdDict, dbh=dbh)
+        isLoaded = detobj.isLoaded()
+        if isLoaded:
+            printinfo("Getting Coadd IDs from database\n")
+            detobj.retrieveCoaddObjectIds()
+        else:
+            printinfo("Preparing to load detection catalog " + detcat)
+            detobj.getIDs()
+            stat = detobj.executeIngest()
+            retval += detobj.getstatus()
+            printinfo("Ingest of detection catalog " + detcat + status[stat] + "\n")
+    except:
+        se = sys.exc_info()
+        e = se[1]
+        tb = se[2]
+        print "Exception raised:", e
+        print "Traceback: "
+        traceback.print_tb(tb)
+        print " "
+        retval += 1
 
     # do a sanity check, as these numbers are needed for the following steps
     if len(coaddObjectIdDict) == 0:
@@ -136,6 +135,8 @@ if __name__ == '__main__':
                 traceback.print_tb(tb)
                 print " "
                 retval += 1
+    else:
+        print "Skipping Coadd Band catalog ingestion, none specified on command line"
 
     print "\n###################### HEALPIX INGESTION ########################\n"
     if healpix is not None:
@@ -156,6 +157,9 @@ if __name__ == '__main__':
             traceback.print_tb(tb)
             print " "
             retval += 1
+    else:
+        print "Skipping Healpix ingestion, none specified on command line"
+
 
     print "\n###################### WEIGHTED AVERAGE INGESTION ########################\n"
 
@@ -179,6 +183,8 @@ if __name__ == '__main__':
                 traceback.print_tb(tb)
                 print " "
                 retval += 1
+    else:
+        print "Skipping Weighted Average ingestion, none specified on command line"
 
     if wavg_oclink is not None:
         wavgfiles = getfilelist(wavg_oclink)
@@ -200,6 +206,8 @@ if __name__ == '__main__':
                 traceback.print_tb(tb)
                 print " "
                 retval += 1
+    else:
+        print "Skipping Weighted Average OCLink ingestion, none specified on command line"
 
     print "\n###################### MANGLE INGESTION ########################\n"
 
@@ -223,6 +231,8 @@ if __name__ == '__main__':
                 traceback.print_tb(tb)
                 print " "
                 retval += 1
+    else:
+        print "Skipping CCDgon ingestion, none specified on command line"
 
     if molygon is not None:
         molyfiles = getfilelist(molygon)
@@ -244,6 +254,8 @@ if __name__ == '__main__':
                 traceback.print_tb(tb)
                 print " "
                 retval += 1
+    else:
+        print "Skipping Molygon ingestion, none specified on command line"
 
     if molygon_ccdgon is not None:
         mcfiles = getfilelist(molygon_ccdgon)
@@ -265,6 +277,8 @@ if __name__ == '__main__':
                 traceback.print_tb(tb)
                 print " "
                 retval += 1
+    else:
+        print "Skipping Molygon CCDgon ingestion, none specified on command line"
 
     if coadd_object_molygon is not None:
         cmfiles = getfilelist(coadd_object_molygon)
@@ -286,6 +300,8 @@ if __name__ == '__main__':
                 traceback.print_tb(tb)
                 print " "
                 retval += 1
+    else:
+        print "Skipping Coadd Object Molygon ingestion, none specified on command line"
 
     print "\n###################### EXTINCTION INGESTION ########################\n"
 
@@ -307,6 +323,8 @@ if __name__ == '__main__':
             traceback.print_tb(tb)
             print " "
             retval += 1
+    else:
+        print "Skipping Excintion ingestion, none specified on command line"
 
     if extinct_band is not None:
         exfiles = getfilelist(extinct_band)
@@ -328,4 +346,7 @@ if __name__ == '__main__':
                 traceback.print_tb(tb)
                 print " "
                 retval += 1
+    else:
+        print "Skipping Extinction Band ingestion, none specified on command line"
+
     exit(retval)
