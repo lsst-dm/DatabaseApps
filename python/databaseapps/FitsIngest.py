@@ -95,7 +95,11 @@ class FitsIngest(Ingest):
                         # if this is NUMBER column, look up COADD_OBJECT_ID and
                         # then skip it
                         elif self.orderedColumns[idx] == "NUMBER":
-                            outrow.append(self.idDict[row[idx]])
+                            try:
+                                outrow.append(self.idDict[row[idx]])
+                            except KeyError:
+                                miscutils.fwdebug_print("ERROR: Coadd number (%i) specified that does not have a corresponding coadd id, found in row %i." % (row[idx], linecount))
+                                raise
 
                         # if this column is an array of values
                         elif datatypes[self.orderedColumns[idx]].subdtype:
@@ -119,7 +123,6 @@ class FitsIngest(Ingest):
             print "Traceback: "
             traceback.print_tb(tb)
             print " "
-            self.sqldata = []
             self.status = 1
             retval = 1
         finally:
