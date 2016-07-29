@@ -88,7 +88,7 @@ if __name__ == '__main__':
             detobj = CoaddCatalog(ingesttype='det', datafile=detcat, idDict=coaddObjectIdDict, dbh=dbh)
             isLoaded = detobj.isLoaded()
             if isLoaded:
-                printinfo("Det catalog %s already loaded, getting Coadd IDs\n" % (detcat))
+                printinfo("Det catalog %s already loaded, getting Coadd IDs from database\n" % (detcat))
                 detobj.retrieveCoaddObjectIds()
             else:
                 printinfo("Preparing to load detection catalog " + detcat)
