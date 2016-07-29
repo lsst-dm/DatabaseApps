@@ -201,3 +201,10 @@ class Entry(object):
         """
         self.column_name.append(column_name)
         self.position.append(position)
+
+    def printinfo(self, msg):
+        """ Generic print statement with time stamp
+
+        """
+        print time.strftime(CoaddCatalog.debugDateFormat) + " - " + msg
+
