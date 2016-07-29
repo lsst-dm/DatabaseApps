@@ -116,7 +116,7 @@ class Ingest(object):
             if numDbObjects == numCatObjects:
                 self.info("INFO: file " + self.fullfilename + 
                           " already ingested with the same number of" +
-                          " objects. Skipping new ingest.")
+                          " objects. Skipping.")
             else:
                 errstr = ("ERROR: file " + self.fullfilename +
                           " already ingested, but the number of objects is" +
