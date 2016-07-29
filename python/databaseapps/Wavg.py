@@ -7,7 +7,7 @@ class Wavg(FitsIngest):
         """
         FitsIngest.__init__(self, filetype, datafile, idDict, dbh=dbh)
 
-        header = fitsio.read_header(datafile, self.objhdu)
+        header = fitsio.read_header(datafile, self.dbDict[self.objhdu]['BAND'].hdu)
         band = header['BAND'].strip()
 
         self.constants = {
