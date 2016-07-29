@@ -92,6 +92,7 @@ if __name__ == '__main__':
                 detobj.retrieveCoaddObjectIds()
             else:
                 printinfo("Preparing to load detection catalog " + detcat)
+                detobj.getIDs()
                 detobj.executeIngest()
                 retval += detobj.getstatus()
                 printinfo("Ingest of detection catalog " + detcat + " completed\n")
@@ -113,8 +114,7 @@ if __name__ == '__main__':
                 bandobj = CoaddCatalog(ingesttype='band', datafile=bfile, idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = bandobj.isLoaded()
                 if isLoaded:
-                    printinfo("Band catalog %s already loaded, getting Coadd IDs\n" % (bfile))
-                    bandobj.retrieveCoaddObjectIds()
+                    printinfo("Band catalog %s already loaded, continuing" % (bfile))
                 else:
                     printinfo("Preparing to load band catalog " + bfile)
                     bandobj.executeIngest()

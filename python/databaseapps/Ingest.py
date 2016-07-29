@@ -114,9 +114,9 @@ class Ingest(object):
         if numDbObjects > 0:
             loaded = True
             if numDbObjects == numCatObjects:
-                self.info("WARNING: file " + self.fullfilename + 
+                self.info("INFO: file " + self.fullfilename + 
                           " already ingested with the same number of" +
-                          " objects. Aborting new ingest.")
+                          " objects. Skipping new ingest.")
             else:
                 errstr = ("ERROR: file " + self.fullfilename +
                           " already ingested, but the number of objects is" +

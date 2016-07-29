@@ -18,9 +18,10 @@ class CoaddCatalog(FitsIngest):
         # grab the band, tile, and pfw_attempt_id for this file
         self.setCatalogInfo(ingesttype)
 
+    def getIDs(self):
         # retrieve all coadd objects ids needed for this band's ingest as
         # one list
-        self.info("grabbing block of coadd object ids")
+        self.info("Grabbing block of coadd object ids")
         coadd_recs = self.getCoaddObjectIds(self.fits[self.objhdu].get_nrows())
         self.coadd_ids = [item[0] for item in coadd_recs]
 
