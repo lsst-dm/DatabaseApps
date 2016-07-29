@@ -97,7 +97,7 @@ class Ingest(object):
         """
         sqlstr = "select count(*) from %s where filename='%s'" % (self.targettable, self.shortfilename)
         cursor = self.dbh.cursor()
-        cursor.execute(sqlstr)# % self.targettable,{"fname":self.shortfilename})
+        cursor.execute(sqlstr)
         count = cursor.fetchone()[0]
         
         return count
@@ -119,7 +119,7 @@ class Ingest(object):
                           " already ingested with the same number of" +
                           " objects. Skipping.")
             else:
-                miscutils.fwdebug_print(("ERROR: file " + self.fullfilename +
+                miscutils.fwdebug_print("ERROR: file " + self.fullfilename +
                           " already ingested, but the number of objects is" +
                           " DIFFERENT: catalog=" + str(numCatObjects) +
                           "; DB=" + str(numDbObjects) + ".")

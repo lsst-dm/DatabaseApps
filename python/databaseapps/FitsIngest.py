@@ -126,5 +126,11 @@ class FitsIngest(Ingest):
             if self.generateID:
                 self.dbDict[self.objhdu]['ID'] = Entry(column_name='ID', position=0)
                 self.orderedColumns = ['ID'] + self.orderedColumns
+            else:
+                if len(self.idDict.keys()) != len(self.sqldata):
+                    self.status = 1
+                    retval = 1
+                    miscutils.fwdebug_print("Incorrect number of rows in %s. Count is %i, should be %i" % (self.shortfilename, len(self.sqldata), len(self.idDict.keys())))
+
             return retval
 

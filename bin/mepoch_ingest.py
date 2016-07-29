@@ -285,7 +285,7 @@ if __name__ == '__main__':
         for file in cmfiles:
             try:
                 printinfo("Working on coadd_object_molygon file " + file[0])
-                cmobj = Mangle(datafile=file[0], filetype='mangle_csv_cobjmoly', idDict=coaddObjectIdDict, dbh=dbh, replacecol=3)
+                cmobj = Mangle(datafile=file[0], filetype='mangle_csv_cobjmoly', idDict=coaddObjectIdDict, dbh=dbh, replacecol=3, checkcount=True)
                 isLoaded = cmobj.isLoaded()
                 if not isLoaded:
                     stat = cmobj.executeIngest()
