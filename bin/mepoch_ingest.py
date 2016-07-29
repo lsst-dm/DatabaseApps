@@ -83,6 +83,7 @@ if __name__ == '__main__':
     services = checkParam(args,'des_services',False)
 
     dbh = desdbi.DesDbi(services, section)
+    printinfo("\n###################### COADD OBJECT INGESTION ########################\n")
     if detcat is not None:
         try:
             detobj = CoaddCatalog(ingesttype='det', datafile=detcat, idDict=coaddObjectIdDict, dbh=dbh)
@@ -133,7 +134,7 @@ if __name__ == '__main__':
                 print "Attempting to continue\n"
                 retval += 1
 
-
+    printinfo("\n###################### HEALPIX INGESTION ########################\n")
     if healpix is not None:
         try:
             healobj = CoaddHealpix(datafile=healpix, idDict=coaddObjectIdDict, dbh=dbh)
@@ -152,6 +153,8 @@ if __name__ == '__main__':
             traceback.print_tb(tb)
             print "Attempting to continue\n"
             retval += 1
+
+    printinfo("\n###################### WEIGHTED AVERAGE INGESTION ########################\n")
 
     if wavg is not None:
         wavgfiles = getfilelist(wavg)
@@ -194,6 +197,8 @@ if __name__ == '__main__':
                 traceback.print_tb(tb)
                 print "Attempting to continue\n"
                 retval += 1
+
+    printinfo("\n###################### MANGLE INGESTION ########################\n")
 
     if ccdgon is not None:
         ccdfiles = getfilelist(ccdgon)
@@ -278,6 +283,8 @@ if __name__ == '__main__':
                 traceback.print_tb(tb)
                 print "Attempting to continue\n"
                 retval += 1
+
+    printinfo("\n###################### EXTINCTION INGESTION ########################\n")
 
     if extinct is not None:
         try:
