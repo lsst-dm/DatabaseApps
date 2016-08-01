@@ -8,7 +8,7 @@ class FitsIngest(Ingest):
     # maximum number of rows to grap from a fits table at a time
     fits_chunk = 10000
 
-    def __init__(self, filetype, datafile, idDict, generateID=False, dbh=None):
+    def __init__(self, filetype, datafile, idDict, generateID=False, dbh=None, matchCount=True):
         """ Base class used to ingest data from fits tables
 
         """
@@ -19,6 +19,7 @@ class FitsIngest(Ingest):
         self.idDict = idDict
 
         self.generateID = generateID
+        self.matchCount = matchCount
 
     def __del__(self):
         if self.fits:
@@ -129,12 +130,10 @@ class FitsIngest(Ingest):
             if self.generateID:
                 self.dbDict[self.objhdu]['ID'] = Entry(column_name='ID', position=0)
                 self.orderedColumns = ['ID'] + self.orderedColumns
-            else:
-                pass
-                #if len(self.idDict.keys()) != len(self.sqldata):
-                #    self.status = 1
-                #    retval = 1
-                #    miscutils.fwdebug_print("Incorrect number of rows in %s. Count is %i, should be %i" % (self.shortfilename, len(self.sqldata), len(self.idDict.keys())))
+            elif self.matchCount and len(self.idDict.keys()) != len(self.sqldata):
+                self.status = 1
+                retval = 1
+                miscutils.fwdebug_print("Incorrect number of rows in %s. Count is %i, should be %i" % (self.shortfilename, len(self.sqldata), len(self.idDict.keys())))
 
             return retval
 
