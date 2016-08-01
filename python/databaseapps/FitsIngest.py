@@ -22,8 +22,9 @@ class FitsIngest(Ingest):
         self.matchCount = matchCount
 
     def __del__(self):
-        if self.fits:
-            self.fits.close()
+        if hasattr(self, 'fits'):
+            if self.fits:
+                self.fits.close()
 
     def getNumObjects(self):
         """ Get the number of rows to be ingested
