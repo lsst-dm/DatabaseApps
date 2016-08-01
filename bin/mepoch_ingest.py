@@ -199,8 +199,8 @@ if __name__ == '__main__':
         wavgfiles = getfilelist(wavg_oclink)
         for file in wavgfiles:
             try:
-                printinfo("Working on wavg_oclink catalog " + file)
-                wavgobj = Wavg(filetype=args['wavg_oclink_filetype'], datafile=file, idDict=coaddObjectIdDict, dbh=dbh, matchCount=False)
+                printinfo("Working on wavg_oclink catalog " + file[0])
+                wavgobj = Wavg(filetype=args['wavg_oclink_filetype'], datafile=file[0], idDict=coaddObjectIdDict, dbh=dbh, matchCount=False)
                 isLoaded = wavgobj.isLoaded()
                 if not isLoaded:
                     stat = wavgobj.executeIngest()
