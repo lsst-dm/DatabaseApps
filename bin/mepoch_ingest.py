@@ -94,7 +94,7 @@ if __name__ == '__main__':
 
 
     status = [" completed"," aborted"]
-    dbh = desdbi.DesDbi(services, section)
+    dbh = desdbi.DesDbi(services, section, retry=True)
     print "\n###################### COADD OBJECT INGESTION ########################\n"
     try:
         printinfo("Working on detection catalog " + detcat)
