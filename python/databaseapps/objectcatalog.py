@@ -126,28 +126,27 @@ class ObjectCatalog:
     def getObjectColumns(self):
         results = OrderedDict()
         sqlstr = '''
-            select dm.hdu, NVL(UPPER(dm.attribute_name),atc.column_name), NVL(dm.position,0), 
-                atc.column_name, NVL(dm.derived,'h'),
-                case when data_type='NUMBER' and data_scale=0 THEN 'integer external'
-                    when data_type='BINARY_FLOAT' THEN 'float external'
-                    when data_type in('BINARY_DOUBLE','NUMBER') THEN 'decimal external'
-                    when data_type in('VARCHAR2','CHAR') THEN 'char'
+            select hdu, UPPER(attribute_name), NVL(position,0), 
+                column_name, NVL(derived,'h'),
+                case when datafile_datatype='int' THEN 'integer external'
+                    when datafile_datatype='float' THEN 'float external'
+                    when datafile_datatype='double' THEN 'decimal external'
+                    when datafile_datatype='char' THEN 'char'
                 end sqlldr_type
-            from ops_datafile_metadata dm, all_tab_columns atc
-            where dm.column_name (+)= atc.column_name
-                and atc.table_name = :tabname
-                and atc.owner = :ownname
-                and dm.filetype (+)= :ftype
+            from ops_datafile_metadata 
+            where filetype = :ftype
             order by 1,2,3 '''
         cursor = self.dbh.cursor()
         params = {
             'ftype':self.filetype,
-            'tabname':self.targettable,
-            'ownname':self.targetschema
             }
         cursor.execute(sqlstr,params)
         records = cursor.fetchall()
+        #print records
+        if len(records) == 0:
+            exit("No columns listed for filetype %s in ops_datafile_metadata, exiting" % (self.filetype))
         for rec in records:
+            #print rec
             hdr = None
             if rec[0] == None:
                 hdr = self.objhdu
@@ -279,6 +278,7 @@ class ObjectCatalog:
         sqlldr_command.append("control=" + self.controlfilename)
         sqlldr_command.append("bad=" + self.badrowsfile)
         sqlldr_command.append("discard=" + self.discardfile)
+        #sqlldr_command.append("DISCARDMAX=1")
         if self.dump or not self.loadingTarget():
             sqlldr_command.append("parallel=true")
             sqlldr_command.append("DIRECT=true")
@@ -293,74 +293,85 @@ class ObjectCatalog:
         attrsToCollect = self.dbDict[self.objhdu]
         sqlldr = None
         outfile = None
-        try:
-            if self.mode == self.SQLLDR:
-                self.info("invoking sqlldr with control file " + self.controlfilename)
-                sqlldr_command = self.getSqlldrCommand()
-                sqlldr = subprocess.Popen(sqlldr_command,shell=False,stdin=subprocess.PIPE)
-            elif self.mode == self.FILE:
-                outfile = open(self.outputfile,'w')
+        MAXTRIES = 5
+        count = 1
+        while count <= MAXTRIES:
+            try:
+                if self.mode == self.SQLLDR:
+                    self.info("invoking sqlldr with control file " + self.controlfilename)
+                    sqlldr_command = self.getSqlldrCommand()
+                    sqlldr = subprocess.Popen(sqlldr_command,shell=False,stdin=subprocess.PIPE)
+                elif self.mode == self.FILE:
+                    outfile = open(self.outputfile,'w')
 
-            attrs = attrsToCollect.keys()
-            orderedFitsColumns = []
-            allcols = self.fits[self.objhdu].get_colnames()
-            for col in allcols:
-                if col.upper() in attrs:
-                    orderedFitsColumns.append(col)
-            datatypes = self.fits[self.objhdu].get_rec_dtype()[0]
-            startrow = firstrow-1
-            endrow = firstrow-1
-            while endrow < lastrow:
-                startrow = endrow
-                endrow = min(startrow+10000, lastrow)
-                data = fitsio.read(
-                        self.fullfilename,
-                        rows=range(startrow,endrow),
-                        columns=orderedFitsColumns,ext=self.objhdu
-                        )
-                for row in data:
-                    outrow = []
-                    for idx in range(0,len(orderedFitsColumns)):
-                        # if this column is an array of values
-                        if datatypes[orderedFitsColumns[idx].upper()].subdtype:
-                            arrvals = []
-                            for pos in attrsToCollect[orderedFitsColumns[idx]][self.POSITION]:
-                                arrvals.append(str(row[idx][int(pos)]).strip())
-                            outrow.append(','.join(arrvals))
-                        # else it is a scalar
-                        else:
-                            outrow.append(str(row[idx]))
-                    # if sqlldr subprocess is still alive, write to it
-                    if sqlldr and sqlldr.poll() == None:
-                        sqlldr.stdin.write(",".join(outrow) + "\n")
-                    # else if we are writing to a file
-                    elif outfile:
-                        outfile.write(",".join(outrow) + "\n")
-                    # otherwise some error occurred
-                    else:
-                        exit("sqlldr or file writing exited with errors. See " + self.logfile + 
-                             ", " + self.discardfile + " and " + self.badrowsfile + " for details")
-                # end for row in data
-            # end while endrow < lastrow
-        finally:
-            if sqlldr:
-                sqlldr.stdin.close()
-            if outfile:
-                outfile.close()
+                attrs = attrsToCollect.keys()
+                orderedFitsColumns = []
+                allcols = self.fits[self.objhdu].get_colnames()
+                for col in allcols:
+                    if col.upper() in attrs:
+                        orderedFitsColumns.append(col)
+                datatypes = self.fits[self.objhdu].get_rec_dtype()[0]
+                startrow = firstrow-1
+                endrow = firstrow-1
+                while endrow < lastrow:
+                    startrow = endrow
+                    endrow = min(startrow+10000, lastrow)
+                    data = fitsio.read(
+                            self.fullfilename,
+                            rows=range(startrow,endrow),
+                            columns=orderedFitsColumns,ext=self.objhdu
+                            )
+                    for row in data:
+                        outrow = []
+                        for idx in range(0,len(orderedFitsColumns)):
+                            # if this column is an array of values
+                            if datatypes[orderedFitsColumns[idx].upper()].subdtype:
+                                arrvals = []
+                                for pos in attrsToCollect[orderedFitsColumns[idx]][self.POSITION]:
+                                    arrvals.append(str(row[idx][int(pos)]).strip())
+                                outrow.append(','.join(arrvals))
+                            # else it is a scalar
+                            else:
+                                outrow.append(str(row[idx]))
+                        # if sqlldr subprocess is still alive, write to it
+                        if sqlldr and sqlldr.poll() == None:
+                            sqlldr.stdin.write(",".join(outrow) + "\n")
+                        # else if we are writing to a file
+                        elif outfile:
+                            outfile.write(",".join(outrow) + "\n")
+                    # end for row in data
+                # end while endrow < lastrow
+            except:
+                if count == MAXTRIES:
+                    raise
+            finally:
+                if sqlldr:
+                    sqlldr.stdin.close()
+                if outfile:
+                    outfile.close()
    
-        if sqlldr and sqlldr.wait():
-            exit("sqlldr exited with errors. See " + self.logfile + ", " + self.discardfile + 
-                 " and " + self.badrowsfile + " for details")
-        else:
-            if not self.keepfiles:
-                if os.path.exists(self.controlfilename) and self.mode==self.SQLLDR:
-                    os.remove(self.controlfilename)
-                if os.path.exists(self.logfile):
-                    os.remove(self.logfile)
-                if os.path.exists(self.badrowsfile):
-                    os.remove(self.badrowsfile)
-                if os.path.exists(self.discardfile):
-                    os.remove(self.discardfile)
+            if sqlldr and sqlldr.wait():
+                if sqlldr.returncode == 2:
+                    break  # do not retry on warning
+                print "sqlldr exited with non-zero status, try %i/%i. See " % (count,MAXTRIES) + self.logfile + ", " + self.discardfile + \
+                      " and " + self.badrowsfile + " for details"
+                if count < MAXTRIES:
+                    print "  Retrying"
+                else:
+                    exit(sqlldr.returncode)
+                count += 1
+                time.sleep(10)
+            elif sqlldr or outfile: # everything ended normally
+                break
+        if not self.keepfiles:
+            if os.path.exists(self.controlfilename) and self.mode==self.SQLLDR:
+                os.remove(self.controlfilename)
+            if os.path.exists(self.logfile):
+                os.remove(self.logfile)
+            if os.path.exists(self.badrowsfile):
+                os.remove(self.badrowsfile)
+            if os.path.exists(self.discardfile):
+                os.remove(self.discardfile)
 
 
     def numAlreadyIngested(self):
