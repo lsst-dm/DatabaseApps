@@ -108,6 +108,7 @@ class Ingest(object):
             except:
                 if num == 5:
                     raise
+                time.sleep(10)  # sleep 10 seconds and retry
 
 
     def isLoaded(self):

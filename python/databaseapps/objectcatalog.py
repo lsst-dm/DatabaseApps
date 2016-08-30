@@ -398,6 +398,7 @@ class ObjectCatalog:
             except:
                 if count == 5:
                     raise
+                time.sleep(10)  # sleep 10 seconds and retry
 
 
     def getNumObjects(self):
