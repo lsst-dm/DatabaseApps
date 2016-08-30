@@ -95,12 +95,19 @@ class Ingest(object):
         """ Determine the number of entries already ingested from the data source
 
         """
-        sqlstr = "select count(*) from %s where filename='%s'" % (self.targettable, self.shortfilename)
-        cursor = self.dbh.cursor()
-        cursor.execute(sqlstr)
-        count = cursor.fetchone()[0]
+        num = 0
+        while num < 5:
+            num += 1
+            try:
+                sqlstr = "select count(*) from %s where filename='%s'" % (self.targettable, self.shortfilename)
+                cursor = self.dbh.cursor()
+                cursor.execute(sqlstr)
+                count = cursor.fetchone()[0]
         
-        return count
+                return count
+            except:
+                if num == 5:
+                    raise
 
 
     def isLoaded(self):

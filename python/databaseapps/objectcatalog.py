@@ -382,15 +382,22 @@ class ObjectCatalog:
             where filename=:fname
             group by reqnum
             '''
-        cursor = self.dbh.cursor()
-        schtbl = self.targetschema + '.' + self.targettable
-        cursor.execute(sqlstr % schtbl,{"fname":self.shortfilename})
-        records = cursor.fetchall()
+        count = 0
+        while count < 5:
+            count += 1
+            try:
+                cursor = self.dbh.cursor()
+                schtbl = self.targetschema + '.' + self.targettable
+                cursor.execute(sqlstr % schtbl,{"fname":self.shortfilename})
+                records = cursor.fetchall()
         
-        if(len(records) > 0):
-            return records[0]
-        else:
-            return [0,0]
+                if(len(records) > 0):
+                    return records[0]
+                else:
+                    return [0,0]
+            except:
+                if count == 5:
+                    raise
 
 
     def getNumObjects(self):
