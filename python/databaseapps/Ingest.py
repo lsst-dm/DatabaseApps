@@ -168,17 +168,19 @@ class Ingest(object):
             cursor.close()
             self.dbh.commit()
             self.info("Inserted %d rows into table %s" % (len(self.sqldata), self.targettable))
-            return 0
+            self.status = 0
         except:
             se = sys.exc_info()
-            e = se[1]
+            e = str(se[1])
             tb = se[2]
-            print "Exception raised: ",e
+            print "Exception raised: ",e.strip()," while ingesting ",self.shortfilename
             print "Traceback: "
             traceback.print_tb(tb)
             print " "
             self.dbh.rollback()
-            return 1
+            self.status = 1
+        finally:
+            return self.status
 
 
 class Entry(object):
