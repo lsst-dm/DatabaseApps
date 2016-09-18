@@ -6,7 +6,7 @@ bin_files = glob.glob("bin/*")
 
 # The main call
 setup(name='DatabaseApss',
-      version ='2.0.4',
+      version ='2.0.5',
       license = "GPL",
       description = "Provide DES database access methods",
       author = "Michelle Gower",
