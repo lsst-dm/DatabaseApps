@@ -423,6 +423,8 @@ class ObjectCatalog:
         self.debug("starting isLoaded()")
         loaded = False
         exitcode = 0
+        # short circuit the checking of loaded objects until a better query can be devised.
+        return (loaded,exitcode)
         if self.dump:
             self.debug("dump=True so skipping isLoaded() check")
         else:
