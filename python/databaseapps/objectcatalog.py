@@ -54,7 +54,7 @@ class ObjectCatalog:
     funcDict = None
     dbDict = None
     fits = None
-    debug = True
+    dodebug = True
     debugDateFormat = '%Y-%m-%d %H:%M:%S'
 
     def __init__(self, request, filetype, datafile, temptable, targettable,
@@ -117,7 +117,7 @@ class ObjectCatalog:
             self.fits.close()
 
     def debug(self, msg):
-        if self.debug:
+        if self.dodebug:
             print time.strftime(self.debugDateFormat) + " - " + msg
 
     def info(self, msg):
