@@ -8,11 +8,12 @@ class FitsIngest(Ingest):
     # maximum number of rows to grap from a fits table at a time
     fits_chunk = 10000
 
-    def __init__(self, filetype, datafile, idDict, generateID=False, dbh=None, matchCount=True):
+    def __init__(self, filetype, datafile, idDict, generateID=False, dbh=None, matchCount=True,
+                 hdu='OBJECTS'):
         """ Base class used to ingest data from fits tables
 
         """
-        Ingest.__init__(self, filetype, datafile,'OBJECTS', '1,2,3', dbh)
+        Ingest.__init__(self, filetype, datafile, hdu, '1,2,3', dbh)
 
         self.fits = fitsio.FITS(datafile)
 
@@ -114,6 +115,8 @@ class FitsIngest(Ingest):
                             # try +=
                         # else it is a scalar
                         else:
+                            if 'S' in datatypes[self.orderedColumns[idx]].str:
+                                row[idx] = row[idx].strip()
                             outrow.append(row[idx])
                     self.sqldata.append(outrow)
         except:
