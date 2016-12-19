@@ -116,8 +116,9 @@ class FitsIngest(Ingest):
                         # else it is a scalar
                         else:
                             if 'S' in datatypes[self.orderedColumns[idx]].str:
-                                row[idx] = row[idx].strip()
-                            outrow.append(row[idx])
+                                outrow.append(row[idx].strip())
+                            else:
+                                outrow.append(row[idx])
                     self.sqldata.append(outrow)
         except:
             miscutils.fwdebug_print("Possible error in line %i of %s" % (linecount, self.shortfilename))
