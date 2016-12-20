@@ -116,7 +116,7 @@ if __name__ == '__main__':
         print "Traceback: "
         traceback.print_tb(tb)
         print " "
-        retval += 1
+        exit(1)
 
     # do a sanity check, as these numbers are needed for the following steps
     if len(coaddObjectIdDict) == 0:
@@ -358,4 +358,5 @@ if __name__ == '__main__':
     else:
         print "Skipping Extinction Band ingestion, none specified on command line"
 
+    print "EXITING WITH RETVAL",retval
     exit(retval)
