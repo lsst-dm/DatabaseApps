@@ -161,10 +161,14 @@ class Ingest(object):
         cursor = self.dbh.cursor()
         cursor.prepare(sqlstr)
         #print sqlstr
+        offset = 0
         try:
             #for dt in self.sqldata:
             #    print dt
-            cursor.executemany(None, self.sqldata)
+            while offset < len(self.sqldata):
+                chunk = min(1000000, len(self.sqldata) - offset)
+                cursor.executemany(None, self.sqldata[offset:offset + chunk])
+                offset += chunk
             cursor.close()
             self.dbh.commit()
             self.info("Inserted %d rows into table %s" % (len(self.sqldata), self.targettable))
