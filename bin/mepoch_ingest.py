@@ -73,6 +73,9 @@ if __name__ == '__main__':
     parser.add_argument('--coadd_object_molygon_filetype', action='store', default='mangle_csv_cobjmoly')
     parser.add_argument('--extinct_filetype', action='store', default='coadd_extinct_ebv')
     parser.add_argument('--extinct_band_filetype', action='store', default='coadd_extinct_band')
+    parser.add_argument('--sci_section', action='store')
+    parser.add_argument('--orig_pfwid', action='store')
+    parser.add_srgument('--sci_table', action='store')
 
 
     args, unknown_args = parser.parse_known_args()
@@ -91,6 +94,7 @@ if __name__ == '__main__':
     coadd_object_molygon = checkParam(args,'coadd_object_molygon_list',False)
     section = checkParam(args,'section',False)
     services = checkParam(args,'des_services',False)
+    sci_section = checkParam(args, 'sci_section', False)
 
 
     status = [" completed"," aborted"]
@@ -99,15 +103,19 @@ if __name__ == '__main__':
     try:
         printinfo("Working on detection catalog " + detcat)
         detobj = CoaddCatalog(ingesttype='det', filetype=args['coadd_object_filetype'], datafile=detcat, idDict=coaddObjectIdDict, dbh=dbh)
-        isLoaded = detobj.isLoaded()
-        if isLoaded:
-            printinfo("Getting Coadd IDs from database\n")
-            detobj.retrieveCoaddObjectIds()
+
+        if sci_section is not None:
+            detobj.retrieveCoaddObjectIds(args['des_services'], sci_section, args['orig_pfwid'], args['sci_table'])
         else:
-            detobj.getIDs()
-            stat = detobj.executeIngest()
-            retval += detobj.getstatus()
-            printinfo("Ingest of detection catalog " + detcat + status[stat] + "\n")
+            isLoaded = detobj.isLoaded()
+            if isLoaded:
+                printinfo("Getting Coadd IDs from database\n")
+                detobj.retrieveCoaddObjectIds()
+            else:
+                detobj.getIDs()
+                stat = detobj.executeIngest()
+                retval += detobj.getstatus()
+                printinfo("Ingest of detection catalog " + detcat + status[stat] + "\n")
     except:
         se = sys.exc_info()
         e = se[1]

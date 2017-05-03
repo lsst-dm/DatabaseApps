@@ -75,12 +75,17 @@ class CoaddCatalog(FitsIngest):
 
         return records
 
-    def retrieveCoaddObjectIds(self):
+    def retrieveCoaddObjectIds(self, services=None, section=None, pfwid=None, table=None):
         """ Get the coadd object id's if the data have already been ingested
 
         """
-        sqlstr = "select object_number, id from %s where filename='%s'" % (self.targettable, self.shortfilename)
-        cursor = self.dbh.cursor()
+        if services is not None:
+            sqlstr = "select object_number, coadd_object_id from %s where pfw_attempt_id=%s" % (table, pfwid)
+            tdbh = desdbi.DesDbi(services, section, retry=True)
+            cursor = tdbh.cursor()
+        else:
+            sqlstr = "select object_number, id from %s where filename='%s'" % (self.targettable, self.shortfilename)
+            cursor = self.dbh.cursor()
         cursor.execute(sqlstr)
         records = cursor.fetchall()
         for r in records:
