@@ -73,9 +73,9 @@ if __name__ == '__main__':
     parser.add_argument('--coadd_object_molygon_filetype', action='store', default='mangle_csv_cobjmoly')
     parser.add_argument('--extinct_filetype', action='store', default='coadd_extinct_ebv')
     parser.add_argument('--extinct_band_filetype', action='store', default='coadd_extinct_band')
-    parser.add_argument('--sci_section', action='store')
+    parser.add_argument('--alt_section', action='store')
     parser.add_argument('--orig_pfwid', action='store')
-    parser.add_srgument('--sci_table', action='store')
+    parser.add_argument('--alt_table', action='store')
 
 
     args, unknown_args = parser.parse_known_args()
@@ -94,7 +94,7 @@ if __name__ == '__main__':
     coadd_object_molygon = checkParam(args,'coadd_object_molygon_list',False)
     section = checkParam(args,'section',False)
     services = checkParam(args,'des_services',False)
-    sci_section = checkParam(args, 'sci_section', False)
+    alt_section = checkParam(args, 'alt_section', False)
 
 
     status = [" completed"," aborted"]
@@ -104,8 +104,9 @@ if __name__ == '__main__':
         printinfo("Working on detection catalog " + detcat)
         detobj = CoaddCatalog(ingesttype='det', filetype=args['coadd_object_filetype'], datafile=detcat, idDict=coaddObjectIdDict, dbh=dbh)
 
-        if sci_section is not None:
-            detobj.retrieveCoaddObjectIds(args['des_services'], sci_section, args['orig_pfwid'], args['sci_table'])
+        if alt_section is not None:
+            printinfo('Getting Coadd IDs from alternate table')
+            detobj.retrieveCoaddObjectIds(args['des_services'], alt_section, args['orig_pfwid'], args['alt_table'])
         else:
             isLoaded = detobj.isLoaded()
             if isLoaded:
@@ -302,7 +303,7 @@ if __name__ == '__main__':
         for file in cmfiles:
             try:
                 printinfo("Working on coadd_object_molygon file " + file[0])
-                cmobj = Mangle(datafile=file[0], filetype=args['coadd_object_molygon_filetype'], idDict=coaddObjectIdDict, dbh=dbh, replacecol=3, checkcount=True)
+                cmobj = Mangle(datafile=file[0], filetype=args['coadd_object_molygon_filetype'], idDict=coaddObjectIdDict, dbh=dbh, replacecol=3, checkcount=True, skipmissing=alt_section is not None)
                 isLoaded = cmobj.isLoaded()
                 if not isLoaded:
                     stat = cmobj.executeIngest()

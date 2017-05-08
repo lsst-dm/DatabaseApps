@@ -1,4 +1,5 @@
 from FitsIngest import FitsIngest
+from despydb import desdbi
 
 class CoaddCatalog(FitsIngest):
     """ Class for ingesting coadd catalogs
@@ -83,6 +84,7 @@ class CoaddCatalog(FitsIngest):
             sqlstr = "select object_number, coadd_object_id from %s where pfw_attempt_id=%s" % (table, pfwid)
             tdbh = desdbi.DesDbi(services, section, retry=True)
             cursor = tdbh.cursor()
+            print sqlstr
         else:
             sqlstr = "select object_number, id from %s where filename='%s'" % (self.targettable, self.shortfilename)
             cursor = self.dbh.cursor()
