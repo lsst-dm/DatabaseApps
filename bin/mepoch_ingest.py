@@ -74,7 +74,7 @@ if __name__ == '__main__':
     parser.add_argument('--extinct_filetype', action='store', default='coadd_extinct_ebv')
     parser.add_argument('--extinct_band_filetype', action='store', default='coadd_extinct_band')
     parser.add_argument('--alt_section', action='store')
-    parser.add_argument('--orig_pfwid', action='store')
+    parser.add_argument('--det_pfwid', action='store')
     parser.add_argument('--alt_table', action='store')
 
 
@@ -95,18 +95,51 @@ if __name__ == '__main__':
     section = checkParam(args,'section',False)
     services = checkParam(args,'des_services',False)
     alt_section = checkParam(args, 'alt_section', False)
-
+    det_pfwid = checkParam(args, 'det_pfwid', False)
+    alt_table = checkParam(args, 'alt_table', False)
 
     status = [" completed"," aborted"]
     dbh = desdbi.DesDbi(services, section, retry=True)
+    # do some quick checking
+    try:
+        if alt_section is None:
+            alt_section = section
+        if alt_table is not None and det_pfwid is None:
+            print "Getting det_pfwid from database."
+            curs = dbh.cursor()
+            tcoadd_file = detcat.split('/')[-1]
+            if tcoadd_file.endswith('.fits'):
+                temp = "'%s' and compression is null" % tcoadd_file
+            else:
+                parts = tcoadd_file.split('.fits')
+                temp = "'%s.fits' and compression='%s'" % (parts[0], parts[1])
+            sql = "select pfw_attempt_id from desfile where filename=%s" % temp
+
+            curs.execute(sql)
+            results = curs.fetchall()
+            if len(results) != 1:
+                raise Exception("Could not determine the pfw_attempt_id from the coadd_file")
+            det_pfwid = results[0][0]
+
+    except:
+        se = sys.exc_info()
+        e = se[1]
+        tb = se[2]
+        print "Exception raised:", e
+        print "Traceback: "
+        traceback.print_tb(tb)
+        print " "
+        exit(1)
+
+
     print "\n###################### COADD OBJECT INGESTION ########################\n"
     try:
         printinfo("Working on detection catalog " + detcat)
         detobj = CoaddCatalog(ingesttype='det', filetype=args['coadd_object_filetype'], datafile=detcat, idDict=coaddObjectIdDict, dbh=dbh)
 
-        if alt_section is not None:
+        if alt_table is not None:
             printinfo('Getting Coadd IDs from alternate table')
-            detobj.retrieveCoaddObjectIds(args['des_services'], alt_section, args['orig_pfwid'], args['alt_table'])
+            detobj.retrieveCoaddObjectIds(args['des_services'], alt_section, det_pfwid, alt_table)
         else:
             isLoaded = detobj.isLoaded()
             if isLoaded:
@@ -303,7 +336,7 @@ if __name__ == '__main__':
         for file in cmfiles:
             try:
                 printinfo("Working on coadd_object_molygon file " + file[0])
-                cmobj = Mangle(datafile=file[0], filetype=args['coadd_object_molygon_filetype'], idDict=coaddObjectIdDict, dbh=dbh, replacecol=3, checkcount=True, skipmissing=alt_section is not None)
+                cmobj = Mangle(datafile=file[0], filetype=args['coadd_object_molygon_filetype'], idDict=coaddObjectIdDict, dbh=dbh, replacecol=3, checkcount=True, skipmissing=alt_table is not None)
                 isLoaded = cmobj.isLoaded()
                 if not isLoaded:
                     stat = cmobj.executeIngest()
