@@ -186,6 +186,12 @@ class Ingest(object):
         finally:
             return self.status
 
+    def printinfo(msg):
+        """ Generic print statement with time stamp
+
+        """
+        print time.strftime(self.debugDateFormat) + " - " + msg
+
 
 class Entry(object):
     __slots__ = ["hdu", "attribute_name", "position", "column_name", "dtype"]

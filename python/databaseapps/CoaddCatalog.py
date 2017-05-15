@@ -80,11 +80,13 @@ class CoaddCatalog(FitsIngest):
         """ Get the coadd object id's if the data have already been ingested
 
         """
-        if services is not None:
+        if table is not None:
+            self.printinfo('Getting Coadd IDs from alternate table')
             sqlstr = "select object_number, coadd_object_id from %s where pfw_attempt_id=%s" % (table, pfwid)
             tdbh = desdbi.DesDbi(services, section, retry=True)
             cursor = tdbh.cursor()
         else:
+            self.printinfo("Getting Coadd IDs from database\n")
             sqlstr = "select object_number, id from %s where filename='%s'" % (self.targettable, self.shortfilename)
             cursor = self.dbh.cursor()
         cursor.execute(sqlstr)

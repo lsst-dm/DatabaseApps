@@ -138,12 +138,10 @@ if __name__ == '__main__':
         detobj = CoaddCatalog(ingesttype='det', filetype=args['coadd_object_filetype'], datafile=detcat, idDict=coaddObjectIdDict, dbh=dbh)
 
         if alt_table is not None:
-            printinfo('Getting Coadd IDs from alternate table')
             detobj.retrieveCoaddObjectIds(args['des_services'], alt_section, det_pfwid, alt_table)
         else:
             isLoaded = detobj.isLoaded()
             if isLoaded:
-                printinfo("Getting Coadd IDs from database\n")
                 detobj.retrieveCoaddObjectIds()
             else:
                 detobj.getIDs()
