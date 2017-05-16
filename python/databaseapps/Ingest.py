@@ -186,7 +186,7 @@ class Ingest(object):
         finally:
             return self.status
 
-    def printinfo(msg):
+    def printinfo(self, msg):
         """ Generic print statement with time stamp
 
         """
