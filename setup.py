@@ -5,8 +5,8 @@ import glob
 bin_files = glob.glob("bin/*") 
 
 # The main call
-setup(name='DatabaseApss',
-      version ='2.0.8',
+setup(name='DatabaseApps',
+      version ='2.0.9',
       license = "GPL",
       description = "Provide DES database access methods",
       author = "Michelle Gower",
