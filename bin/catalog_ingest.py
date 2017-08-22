@@ -12,7 +12,7 @@ import sys
 import time
 import argparse
 from databaseapps.objectcatalog import ObjectCatalog as ObjectCatalog
-
+from databaseapps.objectcatalog import Timing as Timing
 
 def checkParam(args,param,required):
     if args[param]:
@@ -30,7 +30,7 @@ def printinfo(msg):
 if __name__ == '__main__':
     
     hduList = None
-    
+    runtime = Timing('Full ingestion')
     parser = argparse.ArgumentParser(description='Ingest objects from a fits catalog')
     parser.add_argument('-request',action='store')
     parser.add_argument('-filename',action='store')
@@ -42,6 +42,8 @@ if __name__ == '__main__':
     parser.add_argument('-outputfile',action='store')
     parser.add_argument('-dump',action='store')
     parser.add_argument('-keepfiles',action='store')
+    parser.add_argument('-sqlldr_opts',action='store',default='parallel=true direct=true silent=header,feedback,partitions')
+    parser.add_argument('-no_sqlldr_opts',action='store_true',default=False)
 
     args, unknown_args = parser.parse_known_args()
     args = vars(args)
@@ -53,10 +55,13 @@ if __name__ == '__main__':
     targettable = checkParam(args,'targettable',True)
     fitsheader = checkParam(args,'fitsheader',False)
     outputfile = checkParam(args,'outputfile',False)
-    mode = checkParam(args,'mode',False)
     dump = checkParam(args,'dump',False)
     keepfiles = checkParam(args,'keepfiles',False)
-    
+    sqlldr_opts = checkParam(args,'sqlldr_opts',False)
+    no_sqlldr_opts = checkParam(args,'no_sqlldr_opts',False)
+    if no_sqlldr_opts:
+        sqlldr_opts = None
+
     if request==None or filename==None or filetype==None or targettable==None:
         exit(1)
     
@@ -67,15 +72,14 @@ if __name__ == '__main__':
                         temptable=temptable,
                         targettable=targettable,
                         fitsheader=fitsheader,
-                        mode=mode,
                         outputfile=outputfile,
                         dumponly=dump,
-                        keepfiles=keepfiles
+                        keepfiles=keepfiles,
+                        sqlldr_opts=sqlldr_opts
                     )
-    if mode == None or mode == 'sqlldr':
-        (isloaded,code) = objectcat.isLoaded()
-        if isloaded:
-            exit(code)
+    (isloaded,code) = objectcat.isLoaded()
+    if isloaded:
+        exit(code)
         
         printinfo("Preparing to load " + filename + " of type " + filetype +
             " into " + objectcat.tempschema + '.' + objectcat.temptable)
@@ -85,6 +89,6 @@ if __name__ == '__main__':
     objectcat.createControlFile()
     objectcat.createIngestTable()
     objectcat.executeIngest()
-        
-    printinfo("catalogIngest load of " + str(objectcat.getNumObjects()) + " objects from " + filename + " completed")
 
+    printinfo("catalogIngest load of " + str(objectcat.getNumObjects()) + " objects from " + filename + " completed")
+    printinfo(runtime.end())

@@ -19,6 +19,13 @@ from despyserviceaccess import serviceaccess
 from databaseapps.ingestutils import IngestUtils as ingestutils
 import argparse
 
+class Timing(object):
+    def __init__(self, name):
+        self.start = time.time()
+        self.name = name
+    
+    def end(self):
+        return "TIMING: %s finished in %.2f seconds" % (self.name, time.time()-self.start)
 
 class ObjectCatalog:
 
@@ -28,8 +35,6 @@ class ObjectCatalog:
     POSITION = 3
     VALUE = 0
     QUOTE = 1
-    SQLLDR = 'sqlldr'
-    FILE = 'file'
 
     dbh = None
     request = None
@@ -42,7 +47,6 @@ class ObjectCatalog:
     targetschema = None
     dump = False
     outputfile = 'dataset.dat'
-    mode = SQLLDR
     objhdu = 'LDAC_OBJECTS'
     controlfilename = 'catingest.ctl'
     logfile = 'catingest.log'
@@ -54,11 +58,12 @@ class ObjectCatalog:
     funcDict = None
     dbDict = None
     fits = None
+    sqlldr_opts = None
     dodebug = True
     debugDateFormat = '%Y-%m-%d %H:%M:%S'
 
     def __init__(self, request, filetype, datafile, temptable, targettable,
-                    fitsheader, mode, outputfile, dumponly, keepfiles):
+                    fitsheader, outputfile, dumponly, keepfiles,sqlldr_opts):
         
         self.debug("start CatalogIngest.init()")
         self.dbh = desdbi.DesDbi()
@@ -77,8 +82,6 @@ class ObjectCatalog:
                 self.objhdu = int(fitsheader)
             else:
                 self.objhdu = fitsheader
-        if mode:
-            self.mode = mode
         if outputfile:
             self.outputfile = outputfile
         if dumponly:
@@ -87,6 +90,8 @@ class ObjectCatalog:
             self.dump = False
         if keepfiles:
             self.keepfiles = True
+        if sqlldr_opts:
+            self.sqlldr_opts = sqlldr_opts
 
         self.debug("start resolveDbObject() for target: %s" % targettable)
         (self.targetschema,self.targettable) = ingestutils.resolveDbObject(targettable,self.dbh)
@@ -217,10 +222,7 @@ class ObjectCatalog:
         if self.dump or not self.loadingTarget():
             controlfile.write('UNRECOVERABLE\n')
         controlfile.write('LOAD DATA\n')
-        if self.mode == self.SQLLDR:
-            controlfile.write('INFILE "-"\n')
-        elif self.mode == self.FILE:
-            controlfile.write('INFILE "' + self.outputfile + '"\n')
+        controlfile.write('INFILE *\n')
         schtbl = self.tempschema + '.' + self.temptable
         controlfile.write("INTO TABLE " + schtbl + "\nAPPEND\n" +
             "FIELDS TERMINATED BY ','\n(\n")
@@ -232,7 +234,7 @@ class ObjectCatalog:
 
 
     def writeControlfileFooter(self,controlfile):
-        controlfile.write(")")
+        controlfile.write(")\n")
 
     def parseFitsTypeLength(self, formatsByColumn):
         colsizes = OrderedDict()
@@ -265,90 +267,89 @@ class ObjectCatalog:
                     filerows.append(" ".join(row))
         controlfile.write(",\n".join(filerows))
         self.writeControlfileFooter(controlfile)
+        controlfile.write("BEGINDATA\n")
+        lastrow = self.fits[self.objhdu].get_nrows()
+        attrsToCollect = self.dbDict[self.objhdu]
+
+
+        attrs = attrsToCollect.keys()
+        orderedFitsColumns = []
+        allcols = self.fits[self.objhdu].get_colnames()
+        for col in allcols:
+            if col.upper() in attrs:
+                orderedFitsColumns.append(col)
+        datatypes = self.fits[self.objhdu].get_rec_dtype()[0]
+        startrow = 0
+        endrow = 0
+        self.info("Starting control file write")
+        ctlwr = Timing("Control file creation")
+        while endrow < lastrow:
+            startrow = endrow
+            endrow = min(startrow+50000, lastrow)
+            ss = time.time()
+            data = fitsio.read(
+                    self.fullfilename,
+                    rows=range(startrow,endrow),
+                    columns=orderedFitsColumns,ext=self.objhdu
+                    )
+            for row in data:
+                outrow = []
+                for idx in range(0,len(orderedFitsColumns)):
+                    # if this column is an array of values
+                    if datatypes[orderedFitsColumns[idx].upper()].subdtype:
+                        arrvals = []
+                        for pos in attrsToCollect[orderedFitsColumns[idx]][self.POSITION]:
+                            arrvals.append(str(row[idx][int(pos)]).strip())
+                        outrow.append(','.join(arrvals))
+                    # else it is a scalar
+                    else:
+                        outrow.append(str(row[idx]))
+                # else if we are writing to a file
+                controlfile.write(",".join(outrow) + "\n")
+            # end for row in data
+        # end while endrow < lastrow
+        self.info(ctlwr.end())
         controlfile.close()
         self.info("sqlldr control file " + self.controlfilename + " created")
 
 
     def getSqlldrCommand(self):
         connectinfo = serviceaccess.parse(None,None,'DB')
-        connectstring = connectinfo["user"] + "/" + connectinfo["passwd"] + "@" + connectinfo["name"]
+        connectstring = "userid=" + connectinfo["user"] + "@\"\(DESCRIPTION=\(ADDRESS=\(PROTOCOL=TCP\)\(HOST=" + connectinfo["server"] + "\)\(PORT=" + connectinfo["port"] + "\)\)\(CONNECT_DATA=\(SERVER=dedicated\)\(SERVICE_NAME=" + connectinfo["name"] + "\)\)\)\"/PASSWD"
+
         sqlldr_command = []
         sqlldr_command.append("sqlldr")
         sqlldr_command.append(connectstring)
         sqlldr_command.append("control=" + self.controlfilename)
         sqlldr_command.append("bad=" + self.badrowsfile)
         sqlldr_command.append("discard=" + self.discardfile)
-        #sqlldr_command.append("DISCARDMAX=1")
-        if self.dump or not self.loadingTarget():
-            sqlldr_command.append("parallel=true")
-            sqlldr_command.append("DIRECT=true")
-            #sqlldr_command.append("rows=10000")
-        sqlldr_command.append("silent=header,feedback,partitions")
-        return sqlldr_command
+        if self.sqlldr_opts:
+            temp = self.sqlldr_opts.split()
+            for t in temp:
+                sqlldr_command.append(t)
+        return sqlldr_command,connectinfo
 
 
-    def executeIngest(self,firstrow=1,lastrow=-1):
-        if lastrow == -1:
-            lastrow = self.fits[self.objhdu].get_nrows()
-        attrsToCollect = self.dbDict[self.objhdu]
+    def executeIngest(self):
         sqlldr = None
-        outfile = None
         MAXTRIES = 5
         count = 1
         while count <= MAXTRIES:
+            sqlldrtime = Timing('sqlldr ingest')
             try:
-                if self.mode == self.SQLLDR:
-                    self.info("invoking sqlldr with control file " + self.controlfilename)
-                    sqlldr_command = self.getSqlldrCommand()
-                    sqlldr = subprocess.Popen(sqlldr_command,shell=False,stdin=subprocess.PIPE)
-                elif self.mode == self.FILE:
-                    outfile = open(self.outputfile,'w')
-
-                attrs = attrsToCollect.keys()
-                orderedFitsColumns = []
-                allcols = self.fits[self.objhdu].get_colnames()
-                for col in allcols:
-                    if col.upper() in attrs:
-                        orderedFitsColumns.append(col)
-                datatypes = self.fits[self.objhdu].get_rec_dtype()[0]
-                startrow = firstrow-1
-                endrow = firstrow-1
-                while endrow < lastrow:
-                    startrow = endrow
-                    endrow = min(startrow+10000, lastrow)
-                    data = fitsio.read(
-                            self.fullfilename,
-                            rows=range(startrow,endrow),
-                            columns=orderedFitsColumns,ext=self.objhdu
-                            )
-                    for row in data:
-                        outrow = []
-                        for idx in range(0,len(orderedFitsColumns)):
-                            # if this column is an array of values
-                            if datatypes[orderedFitsColumns[idx].upper()].subdtype:
-                                arrvals = []
-                                for pos in attrsToCollect[orderedFitsColumns[idx]][self.POSITION]:
-                                    arrvals.append(str(row[idx][int(pos)]).strip())
-                                outrow.append(','.join(arrvals))
-                            # else it is a scalar
-                            else:
-                                outrow.append(str(row[idx]))
-                        # if sqlldr subprocess is still alive, write to it
-                        if sqlldr and sqlldr.poll() == None:
-                            sqlldr.stdin.write(",".join(outrow) + "\n")
-                        # else if we are writing to a file
-                        elif outfile:
-                            outfile.write(",".join(outrow) + "\n")
-                    # end for row in data
-                # end while endrow < lastrow
+                self.info("invoking sqlldr with control file " + self.controlfilename)
+                sqlldr_command,connectinfo = self.getSqlldrCommand()
+                self.info(" with the command line " + " ".join(sqlldr_command))
+                for i,cmd in enumerate(sqlldr_command):
+                    if 'userid' in cmd:
+                        sqlldr_command[i] = cmd.replace('PASSWD',connectinfo["passwd"])
+                        break
+                del connectinfo
+                sqlldr = subprocess.Popen(sqlldr_command,shell=False)
+                count += 1
             except:
                 if count == MAXTRIES:
                     raise
-            finally:
-                if sqlldr:
-                    sqlldr.stdin.close()
-                if outfile:
-                    outfile.close()
    
             if sqlldr and sqlldr.wait():
                 if sqlldr.returncode == 2:
@@ -361,10 +362,11 @@ class ObjectCatalog:
                     exit(sqlldr.returncode)
                 count += 1
                 time.sleep(10)
-            elif sqlldr or outfile: # everything ended normally
+            elif sqlldr: # everything ended normally
                 break
+        self.info(sqlldrtime.end())
         if not self.keepfiles:
-            if os.path.exists(self.controlfilename) and self.mode==self.SQLLDR:
+            if os.path.exists(self.controlfilename):
                 os.remove(self.controlfilename)
             if os.path.exists(self.logfile):
                 os.remove(self.logfile)
