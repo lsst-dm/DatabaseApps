@@ -13,17 +13,24 @@ import fitsio
 import subprocess
 import time
 import re
+import copy
 from collections import OrderedDict
 from despydb import desdbi
 from despyserviceaccess import serviceaccess
 from databaseapps.ingestutils import IngestUtils as ingestutils
 import argparse
+import random
 
 class Timing(object):
     def __init__(self, name):
         self.start = time.time()
+	self.current = time.time()
         self.name = name
-    
+    def report(self,text):
+	txt = "TIMING: %s finished in %.2f seconds" % (text, time.time()-self.current)
+	self.current = time.time()
+	return txt
+
     def end(self):
         return "TIMING: %s finished in %.2f seconds" % (self.name, time.time()-self.start)
 
@@ -46,27 +53,21 @@ class ObjectCatalog:
     targettable = None
     targetschema = None
     dump = False
-    outputfile = 'dataset.dat'
     objhdu = 'LDAC_OBJECTS'
-    controlfilename = 'catingest.ctl'
-    logfile = 'catingest.log'
-    badrowsfile = 'badrows.bad'
-    discardfile = 'discarded.bad'
-    keepfiles = False
 
     constDict = None
+    constlist = []
     funcDict = None
     dbDict = None
     fits = None
-    sqlldr_opts = None
     dodebug = True
     debugDateFormat = '%Y-%m-%d %H:%M:%S'
 
     def __init__(self, request, filetype, datafile, temptable, targettable,
-                    fitsheader, outputfile, dumponly, keepfiles,sqlldr_opts):
+                    fitsheader, dumponly, services, section):
         
         self.debug("start CatalogIngest.init()")
-        self.dbh = desdbi.DesDbi()
+        self.dbh = desdbi.DesDbi(services,section)
 
         self.debug("opening fits file")
         self.fits = fitsio.FITS(datafile)
@@ -82,16 +83,11 @@ class ObjectCatalog:
                 self.objhdu = int(fitsheader)
             else:
                 self.objhdu = fitsheader
-        if outputfile:
-            self.outputfile = outputfile
         if dumponly:
             self.dump = True
         else:
             self.dump = False
-        if keepfiles:
-            self.keepfiles = True
-        if sqlldr_opts:
-            self.sqlldr_opts = sqlldr_opts
+        self.consts = []
 
         self.debug("start resolveDbObject() for target: %s" % targettable)
         (self.targetschema,self.targettable) = ingestutils.resolveDbObject(targettable,self.dbh)
@@ -108,9 +104,11 @@ class ObjectCatalog:
             self.constDict = {}
         else:
             self.constDict = {
-                "FILENAME":[self.shortfilename,True], 
+                "FILENAME":[self.shortfilename + str(random.randint(1,10000)),True], 
                 "REQNUM":[request,False]
                 }
+            self.constlist.append("FILENAME")
+            self.constlist.append("REQNUM")
         self.debug("start getObjectColumns()")
         self.dbDict = self.getObjectColumns()
         self.debug("CatalogIngest.init() done")
@@ -171,6 +169,7 @@ class ObjectCatalog:
                 results[hdr][rec[1]][self.POSITION].append(str(rec[2]))
         cursor.close()
         self.checkForArrays(results)
+
         return results
 
 
@@ -211,6 +210,7 @@ class ObjectCatalog:
                 else:
                     quoteit = False
                 self.constDict[col] = [value,quoteit]
+                self.constlist.append(col)
 
     def loadingTarget(self):
         if self.targettable == self.temptable and self.targetschema == self.tempschema:
@@ -218,19 +218,13 @@ class ObjectCatalog:
         else:
             return False
 
-    def writeControlfileHeader(self,controlfile):
-        if self.dump or not self.loadingTarget():
-            controlfile.write('UNRECOVERABLE\n')
-        controlfile.write('LOAD DATA\n')
-        controlfile.write('INFILE *\n')
-        schtbl = self.tempschema + '.' + self.temptable
-        controlfile.write("INTO TABLE " + schtbl + "\nAPPEND\n" +
-            "FIELDS TERMINATED BY ','\n(\n")
-        for colname, val in self.constDict.iteritems():
-            if val[self.QUOTE]:
-                controlfile.write(colname + " CONSTANT '" + val[self.VALUE] + "',\n")
-            else:
-                controlfile.write(colname + " CONSTANT " + str(val[self.VALUE]) + ",\n")
+
+    def setStart(self):
+        for colname in self.constlist:
+            self.consts.append(self.constDict[colname][self.VALUE])
+            #    controlfile.write(colname + " CONSTANT '" + val[self.VALUE] + "',\n")
+            #else:
+            #    controlfile.write(colname + " CONSTANT " + str(val[self.VALUE]) + ",\n")
 
 
     def writeControlfileFooter(self,controlfile):
@@ -249,25 +243,22 @@ class ObjectCatalog:
         return [colsizes, coltypes]
 
 
-    def createControlFile(self):
-        controlfile = file(self.controlfilename, 'w')
+    def executeIngest(self):
         for hduName in self.dbDict.keys():
             if hduName not in [self.objhdu,'WCL']:
                 self.getConstValuesFromHeader(hduName)
-        self.writeControlfileHeader(controlfile)
+        self.setStart()
+
         dbobjdata = self.dbDict[self.objhdu]
         orderedFitsColumns = self.fits[self.objhdu].get_colnames()
         filerows = []
+        columns = copy.deepcopy(self.constlist)
+
         for headerName in orderedFitsColumns:
             if headerName.upper() in dbobjdata.keys():
                 for colname in dbobjdata[headerName.upper()][self.COLUMN_NAME]:
-                    row = []
-                    row.append(colname)
-                    row.append(dbobjdata[headerName.upper()][self.DATATYPE])
-                    filerows.append(" ".join(row))
-        controlfile.write(",\n".join(filerows))
-        self.writeControlfileFooter(controlfile)
-        controlfile.write("BEGINDATA\n")
+                    columns.append(colname)
+
         lastrow = self.fits[self.objhdu].get_nrows()
         attrsToCollect = self.dbDict[self.objhdu]
 
@@ -281,99 +272,78 @@ class ObjectCatalog:
         datatypes = self.fits[self.objhdu].get_rec_dtype()[0]
         startrow = 0
         endrow = 0
-        self.info("Starting control file write")
-        ctlwr = Timing("Control file creation")
+        outdata = []
         while endrow < lastrow:
+            datarow = {}
             startrow = endrow
             endrow = min(startrow+50000, lastrow)
-            ss = time.time()
+            print startrow,endrow,lastrow
             data = fitsio.read(
                     self.fullfilename,
                     rows=range(startrow,endrow),
                     columns=orderedFitsColumns,ext=self.objhdu
                     )
-            for row in data:
-                outrow = []
+            hdu = 'LDAC_OBJECTS'
+            for i,row in enumerate(data):
+                #print i
+                outrow = {}
+                for item,value in self.constDict.iteritems():
+                    outrow[item] = value[0]
+                #outrow = copy.deepcopy(self.constDict)
                 for idx in range(0,len(orderedFitsColumns)):
                     # if this column is an array of values
+                    name = orderedFitsColumns[idx].upper()
                     if datatypes[orderedFitsColumns[idx].upper()].subdtype:
-                        arrvals = []
+                        #arrvals = []
                         for pos in attrsToCollect[orderedFitsColumns[idx]][self.POSITION]:
-                            arrvals.append(str(row[idx][int(pos)]).strip())
-                        outrow.append(','.join(arrvals))
+                            #name = orderedFitsColumns[idx].upper()
+                            #for hdu in self.dbDict.keys():
+                            #    if name in self.dbDict[hdu].keys():
+                            #        print hdu
+                            outrow[self.dbDict[hdu][name][0][int(pos)]] = str(row[idx][int(pos)])
+                            #break
+                            #raise Exception('Error locating column')
+                            #print self.dbDict['LDAC_OBJECTS'].keys()
+                            #print self.dbDict[orderedFitsColumns[idx].upper()][0]
+                            #outrow[orderedFitsColumns[idx].upper() + "_" + str(int(pos) + 1)] = str(row[idx][int(pos)])
                     # else it is a scalar
                     else:
-                        outrow.append(str(row[idx]))
+                        #for hdu in self.dbDict.keys():
+                        #    if name in self.dbDict[hdu].keys():
+                        #print hdu
+                        outrow[self.dbDict[hdu][name][0][0]] = str(row[idx])
+                        #break
+
+                        #outrow[orderedFitsColumns[idx].upper()] = str(row[idx])
                 # else if we are writing to a file
-                controlfile.write(",".join(outrow) + "\n")
+                outdata.append(outrow)
             # end for row in data
         # end while endrow < lastrow
-        self.info(ctlwr.end())
-        controlfile.close()
-        self.info("sqlldr control file " + self.controlfilename + " created")
+        if len(outdata) > 0:
+            self.insert_many(self.tempschema + '.' + self.temptable, columns, outdata)
+	    #self.execute('COMMIT WRITE BATCH NOWAIT')
+            #self.dbh.commit()
 
+    def insert_many(self, table, columns, rows):
+        if len (rows) == 0:
+            return
+        if hasattr (rows [0], 'keys'):
+            vals = ','.join ([self.dbh.get_named_bind_string (c) for c in columns])
+        else:
+            bindStr = self.dbh.get_positional_bind_string()
+            vals = ','.join ([bindStr for c in columns])
 
-    def getSqlldrCommand(self):
-        connectinfo = serviceaccess.parse(None,None,'DB')
-        connectstring = "userid=" + connectinfo["user"] + "@\"\(DESCRIPTION=\(ADDRESS=\(PROTOCOL=TCP\)\(HOST=" + connectinfo["server"] + "\)\(PORT=" + connectinfo["port"] + "\)\)\(CONNECT_DATA=\(SERVER=dedicated\)\(SERVICE_NAME=" + connectinfo["name"] + "\)\)\)\"/PASSWD"
+        colStr = ','.join (columns)
 
-        sqlldr_command = []
-        sqlldr_command.append("sqlldr")
-        sqlldr_command.append(connectstring)
-        sqlldr_command.append("control=" + self.controlfilename)
-        sqlldr_command.append("bad=" + self.badrowsfile)
-        sqlldr_command.append("discard=" + self.discardfile)
-        if self.sqlldr_opts:
-            temp = self.sqlldr_opts.split()
-            for t in temp:
-                sqlldr_command.append(t)
-        return sqlldr_command,connectinfo
+        stmt = 'INSERT INTO %s (%s) VALUES (%s)' % (table, colStr, vals)
+        #print stmt
 
-
-    def executeIngest(self):
-        sqlldr = None
-        MAXTRIES = 5
-        count = 1
-        while count <= MAXTRIES:
-            sqlldrtime = Timing('sqlldr ingest')
-            try:
-                self.info("invoking sqlldr with control file " + self.controlfilename)
-                sqlldr_command,connectinfo = self.getSqlldrCommand()
-                self.info(" with the command line " + " ".join(sqlldr_command))
-                for i,cmd in enumerate(sqlldr_command):
-                    if 'userid' in cmd:
-                        sqlldr_command[i] = cmd.replace('PASSWD',connectinfo["passwd"])
-                        break
-                del connectinfo
-                sqlldr = subprocess.Popen(sqlldr_command,shell=False)
-                count += 1
-            except:
-                if count == MAXTRIES:
-                    raise
-   
-            if sqlldr and sqlldr.wait():
-                if sqlldr.returncode == 2:
-                    break  # do not retry on warning
-                print "sqlldr exited with non-zero status, try %i/%i. See " % (count,MAXTRIES) + self.logfile + ", " + self.discardfile + \
-                      " and " + self.badrowsfile + " for details"
-                if count < MAXTRIES:
-                    print "  Retrying"
-                else:
-                    exit(sqlldr.returncode)
-                count += 1
-                time.sleep(10)
-            elif sqlldr: # everything ended normally
-                break
-        self.info(sqlldrtime.end())
-        if not self.keepfiles:
-            if os.path.exists(self.controlfilename):
-                os.remove(self.controlfilename)
-            if os.path.exists(self.logfile):
-                os.remove(self.logfile)
-            if os.path.exists(self.badrowsfile):
-                os.remove(self.badrowsfile)
-            if os.path.exists(self.discardfile):
-                os.remove(self.discardfile)
+        curs = self.dbh.cursor ()
+        try:
+            curs.executemany (stmt, rows)
+            curs.execute('COMMIT WRITE BATCH NOWAIT')
+        finally:
+            curs.close ()
 
 
     def numAlreadyIngested(self):
@@ -405,9 +375,6 @@ class ObjectCatalog:
 
     def getNumObjects(self):
         return self.fits[self.objhdu].get_nrows()
-
-    def getOutputFilename(self):
-        return self.outputfile
 
     def createIngestTable(self):
         tablespace = "DESSE_REQNUM%07d_T" % int(self.request)

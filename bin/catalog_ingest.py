@@ -38,12 +38,9 @@ if __name__ == '__main__':
     parser.add_argument('-temptable',action='store')
     parser.add_argument('-targettable',action='store')
     parser.add_argument('-fitsheader',action='store')
-    parser.add_argument('-mode',action='store')
-    parser.add_argument('-outputfile',action='store')
     parser.add_argument('-dump',action='store')
-    parser.add_argument('-keepfiles',action='store')
-    parser.add_argument('-sqlldr_opts',action='store',default='parallel=true direct=true silent=header,feedback,partitions')
-    parser.add_argument('-no_sqlldr_opts',action='store_true',default=False)
+    parser.add_argument('-section', '-s', help='db section in the desservices file')
+    parser.add_argument('-des_services', help='desservices file')
 
     args, unknown_args = parser.parse_known_args()
     args = vars(args)
@@ -54,17 +51,13 @@ if __name__ == '__main__':
     temptable = checkParam(args,'temptable',False)
     targettable = checkParam(args,'targettable',True)
     fitsheader = checkParam(args,'fitsheader',False)
-    outputfile = checkParam(args,'outputfile',False)
     dump = checkParam(args,'dump',False)
-    keepfiles = checkParam(args,'keepfiles',False)
-    sqlldr_opts = checkParam(args,'sqlldr_opts',False)
-    no_sqlldr_opts = checkParam(args,'no_sqlldr_opts',False)
-    if no_sqlldr_opts:
-        sqlldr_opts = None
+    services = checkParam(args,'des_services',False)
+    section = checkParam(args,'section',False)
 
     if request==None or filename==None or filetype==None or targettable==None:
         exit(1)
-    
+    printinfo(runtime.report("INIT"))    
     objectcat = ObjectCatalog(
                         request=request,
                         filetype=filetype,
@@ -72,23 +65,15 @@ if __name__ == '__main__':
                         temptable=temptable,
                         targettable=targettable,
                         fitsheader=fitsheader,
-                        outputfile=outputfile,
                         dumponly=dump,
-                        keepfiles=keepfiles,
-                        sqlldr_opts=sqlldr_opts
+                        services=services,
+                        section=section
                     )
-    (isloaded,code) = objectcat.isLoaded()
-    if isloaded:
-        exit(code)
-        
-        printinfo("Preparing to load " + filename + " of type " + filetype +
-            " into " + objectcat.tempschema + '.' + objectcat.temptable)
-    else:
-        printinfo("Preparing to dump " + filename + " of type " + filetype +
-            " into file " + objectcat.getOutputFilename())
-    objectcat.createControlFile()
-    objectcat.createIngestTable()
-    objectcat.executeIngest()
+    printinfo(runtime.report("READ %s" % str(objectcat.getNumObjects())))
 
+    objectcat.createIngestTable()
+    printinfo(runtime.report("CREATE"))
+    objectcat.executeIngest()
+    printinfo(runtime.report("LOAD %s" % str(objectcat.getNumObjects())))
     printinfo("catalogIngest load of " + str(objectcat.getNumObjects()) + " objects from " + filename + " completed")
     printinfo(runtime.end())
