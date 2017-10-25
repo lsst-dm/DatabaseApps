@@ -22,7 +22,7 @@ def checkParam(args, param, required):
 
 
 def printinfo(msg):
-    print time.strftime(ObjectCatalog.debugDateFormat) + " - " + msg
+    print(time.strftime(ObjectCatalog.debugDateFormat) + " - " + msg)
 
 
 if __name__ == '__main__':

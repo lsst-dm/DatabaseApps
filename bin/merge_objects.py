@@ -50,9 +50,9 @@ if __name__ == '__main__':
         tempschema, temptable = parseTableName(args['temptable'])
 
     if tempschema:
-        print "Merging %s into %s..." % (tempschema + '.' + temptable, args['targettable'])
+        print("Merging %s into %s..." % (tempschema + '.' + temptable, args['targettable']))
     else:
-        print "Merging %s into %s..." % (temptable, args['targettable'])
+        print("Merging %s into %s..." % (temptable, args['targettable']))
 
     dbh = desdbi.DesDbi()
     cursor = dbh.cursor()
@@ -62,4 +62,4 @@ if __name__ == '__main__':
         cursor.callproc("%s.pMergeObjects" % targetschema, [temptable, targettable, tempschema, targetschema])
 
     cursor.close()
-    print "Merge complete"
+    print("Merge complete")

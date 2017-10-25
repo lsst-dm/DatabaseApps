@@ -29,7 +29,7 @@ def printinfo(msg):
     """ Generic print statement with time stamp
 
     """
-    print time.strftime(CoaddCatalog.debugDateFormat) + " - " + msg
+    print(time.strftime(CoaddCatalog.debugDateFormat) + " - " + msg)
 
 
 def getfilelist(file):
@@ -108,7 +108,7 @@ if __name__ == '__main__':
         if alt_section is None:
             alt_section = section
         if alt_table is not None and det_pfwid is None:
-            print "Getting det_pfwid from database."
+            print("Getting det_pfwid from database.")
             curs = dbh.cursor()
             tcoadd_file = detcat.split('/')[-1]
             if tcoadd_file.endswith('.fits'):
@@ -128,13 +128,13 @@ if __name__ == '__main__':
         se = sys.exc_info()
         e = se[1]
         tb = se[2]
-        print "Exception raised:", e
-        print "Traceback: "
+        print("Exception raised:", e)
+        print("Traceback: ")
         traceback.print_tb(tb)
-        print " "
+        print(" ")
         exit(1)
 
-    print "\n###################### COADD OBJECT INGESTION ########################\n"
+    print("\n###################### COADD OBJECT INGESTION ########################\n")
     try:
         printinfo("Working on detection catalog " + detcat)
         detobj = CoaddCatalog(
@@ -155,15 +155,15 @@ if __name__ == '__main__':
         se = sys.exc_info()
         e = se[1]
         tb = se[2]
-        print "Exception raised:", e
-        print "Traceback: "
+        print("Exception raised:", e)
+        print("Traceback: ")
         traceback.print_tb(tb)
-        print " "
+        print(" ")
         exit(1)
 
     # do a sanity check, as these numbers are needed for the following steps
     if len(coaddObjectIdDict) == 0:
-        print "Coadd Object Dict is empty, cannot continue"
+        print("Coadd Object Dict is empty, cannot continue")
         exit(1)
 
     if bandcat is not None:
@@ -183,15 +183,15 @@ if __name__ == '__main__':
                 se = sys.exc_info()
                 e = se[1]
                 tb = se[2]
-                print "Exception raised:", e
-                print "Traceback: "
+                print("Exception raised:", e)
+                print("Traceback: ")
                 traceback.print_tb(tb)
-                print " "
+                print(" ")
                 retval += 1
     else:
-        print "Skipping Coadd Band catalog ingestion, none specified on command line"
+        print("Skipping Coadd Band catalog ingestion, none specified on command line")
 
-    print "\n###################### HEALPIX INGESTION ########################\n"
+    print("\n###################### HEALPIX INGESTION ########################\n")
     if healpix is not None:
         try:
             printinfo("Working on healpix catalog " + healpix)
@@ -206,15 +206,15 @@ if __name__ == '__main__':
             se = sys.exc_info()
             e = se[1]
             tb = se[2]
-            print "Exception raised:", e
-            print "Traceback: "
+            print("Exception raised:", e)
+            print("Traceback: ")
             traceback.print_tb(tb)
-            print " "
+            print(" ")
             retval += 1
     else:
-        print "Skipping Healpix ingestion, none specified on command line"
+        print("Skipping Healpix ingestion, none specified on command line")
 
-    print "\n###################### WEIGHTED AVERAGE INGESTION ########################\n"
+    print("\n###################### WEIGHTED AVERAGE INGESTION ########################\n")
 
     if wavg is not None:
         wavgfiles = getfilelist(wavg)
@@ -232,13 +232,13 @@ if __name__ == '__main__':
                 se = sys.exc_info()
                 e = se[1]
                 tb = se[2]
-                print "Exception raised:", e
-                print "Traceback: "
+                print("Exception raised:", e)
+                print("Traceback: ")
                 traceback.print_tb(tb)
-                print " "
+                print(" ")
                 retval += 1
     else:
-        print "Skipping Weighted Average ingestion, none specified on command line"
+        print("Skipping Weighted Average ingestion, none specified on command line")
 
     if wavg_oclink is not None:
         wavgfiles = getfilelist(wavg_oclink)
@@ -256,15 +256,15 @@ if __name__ == '__main__':
                 se = sys.exc_info()
                 e = se[1]
                 tb = se[2]
-                print "Exception raised:", e
-                print "Traceback: "
+                print("Exception raised:", e)
+                print("Traceback: ")
                 traceback.print_tb(tb)
-                print " "
+                print(" ")
                 retval += 1
     else:
-        print "Skipping Weighted Average OCLink ingestion, none specified on command line"
+        print("Skipping Weighted Average OCLink ingestion, none specified on command line")
 
-    print "\n###################### MANGLE INGESTION ########################\n"
+    print("\n###################### MANGLE INGESTION ########################\n")
 
     if ccdgon is not None:
         ccdfiles = getfilelist(ccdgon)
@@ -282,13 +282,13 @@ if __name__ == '__main__':
                 se = sys.exc_info()
                 e = se[1]
                 tb = se[2]
-                print "Exception raised:", e
-                print "Traceback: "
+                print("Exception raised:", e)
+                print("Traceback: ")
                 traceback.print_tb(tb)
-                print " "
+                print(" ")
                 retval += 1
     else:
-        print "Skipping CCDgon ingestion, none specified on command line"
+        print("Skipping CCDgon ingestion, none specified on command line")
 
     if molygon is not None:
         molyfiles = getfilelist(molygon)
@@ -306,13 +306,13 @@ if __name__ == '__main__':
                 se = sys.exc_info()
                 e = se[1]
                 tb = se[2]
-                print "Exception raised:", e
-                print "Traceback: "
+                print("Exception raised:", e)
+                print("Traceback: ")
                 traceback.print_tb(tb)
-                print " "
+                print(" ")
                 retval += 1
     else:
-        print "Skipping Molygon ingestion, none specified on command line"
+        print("Skipping Molygon ingestion, none specified on command line")
 
     if molygon_ccdgon is not None:
         mcfiles = getfilelist(molygon_ccdgon)
@@ -330,13 +330,13 @@ if __name__ == '__main__':
                 se = sys.exc_info()
                 e = se[1]
                 tb = se[2]
-                print "Exception raised:", e
-                print "Traceback: "
+                print("Exception raised:", e)
+                print("Traceback: ")
                 traceback.print_tb(tb)
-                print " "
+                print(" ")
                 retval += 1
     else:
-        print "Skipping Molygon CCDgon ingestion, none specified on command line"
+        print("Skipping Molygon CCDgon ingestion, none specified on command line")
 
     if coadd_object_molygon is not None:
         cmfiles = getfilelist(coadd_object_molygon)
@@ -354,15 +354,15 @@ if __name__ == '__main__':
                 se = sys.exc_info()
                 e = se[1]
                 tb = se[2]
-                print "Exception raised:", e
-                print "Traceback: "
+                print("Exception raised:", e)
+                print("Traceback: ")
                 traceback.print_tb(tb)
-                print " "
+                print(" ")
                 retval += 1
     else:
-        print "Skipping Coadd Object Molygon ingestion, none specified on command line"
+        print("Skipping Coadd Object Molygon ingestion, none specified on command line")
 
-    print "\n###################### EXTINCTION INGESTION ########################\n"
+    print("\n###################### EXTINCTION INGESTION ########################\n")
 
     if extinct is not None:
         try:
@@ -378,13 +378,13 @@ if __name__ == '__main__':
             se = sys.exc_info()
             e = se[1]
             tb = se[2]
-            print "Exception raised:", e
-            print "Traceback: "
+            print("Exception raised:", e)
+            print("Traceback: ")
             traceback.print_tb(tb)
-            print " "
+            print(" ")
             retval += 1
     else:
-        print "Skipping Excintion ingestion, none specified on command line"
+        print("Skipping Excintion ingestion, none specified on command line")
 
     if extinct_band is not None:
         exfiles = getfilelist(extinct_band)
@@ -402,13 +402,13 @@ if __name__ == '__main__':
                 se = sys.exc_info()
                 e = se[1]
                 tb = se[2]
-                print "Exception raised:", e
-                print "Traceback: "
+                print("Exception raised:", e)
+                print("Traceback: ")
                 traceback.print_tb(tb)
-                print " "
+                print(" ")
                 retval += 1
     else:
-        print "Skipping Extinction Band ingestion, none specified on command line"
+        print("Skipping Extinction Band ingestion, none specified on command line")
 
-    print "EXITING WITH RETVAL", retval
+    print("EXITING WITH RETVAL", retval)
     exit(retval)
