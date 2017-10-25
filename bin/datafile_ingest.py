@@ -12,7 +12,6 @@ from despydmdb.desdmdbi import DesDmDbi
 import databaseapps.datafile_ingest_utils as dfiutils
 
 
-
 def main():
     """ Program entry point """
 
