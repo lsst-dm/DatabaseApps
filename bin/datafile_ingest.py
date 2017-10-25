@@ -1,9 +1,4 @@
 #!/usr/bin/env python
-# $Id: dessubmit 39403 2015-07-23 16:11:33Z mgower $
-# $Rev:: 39403                            $:  # Revision of last commit.
-# $LastChangedBy:: mgower                 $:  # Author of last commit.
-# $LastChangedDate:: 2015-07-23 11:11:33 #$:  # Date of last commit.
-
 """ Ingest non-metadata from file into DB table """
 
 import argparse
