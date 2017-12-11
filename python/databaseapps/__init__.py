@@ -1,3 +1,8 @@
+# $Id: __init__.py 10292 2013-01-07 17:54:32Z mgower $
+# $Rev:: 10292                            $:  # Revision of last commit.
+# $LastChangedBy:: mgower                 $:  # Author of last commit.
+# $LastChangedDate:: 2013-01-07 11:54:32 #$:  # Date of last commit.
+
 """
     Provide DES database access methods
 

@@ -2,7 +2,6 @@ from FitsIngest import FitsIngest
 
 import fitsio
 
-
 class Wavg(FitsIngest):
     def __init__(self, filetype, datafile, idDict, dbh, matchCount=True):
         """ Class to ingest wavg and wavg_oclink data

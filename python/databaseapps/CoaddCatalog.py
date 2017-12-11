@@ -1,12 +1,10 @@
 from FitsIngest import FitsIngest
 from despydb import desdbi
 
-
 class CoaddCatalog(FitsIngest):
     """ Class for ingesting coadd catalogs
 
     """
-
     def __init__(self, ingesttype, filetype, datafile, idDict, dbh):
         FitsIngest.__init__(self, filetype, datafile, idDict, True, dbh)
 
@@ -28,6 +26,7 @@ class CoaddCatalog(FitsIngest):
         coadd_recs = self.getCoaddObjectIds(self.fits[self.objhdu].get_nrows())
         self.coadd_ids = [item[0] for item in coadd_recs]
 
+
     def setCatalogInfo(self, ingesttype):
         """ Grab info from catalog table based on the filename, and set corresponding
             class variables.
@@ -38,7 +37,7 @@ class CoaddCatalog(FitsIngest):
             where filename=:fname
             '''
         cursor = self.dbh.cursor()
-        cursor.execute(sqlstr % self.catalogtable, {"fname": self.shortfilename})
+        cursor.execute(sqlstr % self.catalogtable,{"fname":self.shortfilename})
         records = cursor.fetchall()
 
         if(len(records) > 0):
@@ -88,11 +87,11 @@ class CoaddCatalog(FitsIngest):
             cursor = tdbh.cursor()
         else:
             self.printinfo("Getting Coadd IDs from database\n")
-            sqlstr = "select object_number, id from %s where filename='%s'" % (
-                self.targettable, self.shortfilename)
+            sqlstr = "select object_number, id from %s where filename='%s'" % (self.targettable, self.shortfilename)
             cursor = self.dbh.cursor()
         cursor.execute(sqlstr)
         records = cursor.fetchall()
         for r in records:
             if not self.idDict.has_key(r[0]):
                 self.idDict[r[0]] = r[1]
+

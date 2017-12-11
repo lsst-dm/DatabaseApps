@@ -5,7 +5,6 @@ from despymisc import miscutils
 import traceback
 import sys
 
-
 class Ingest(object):
     """ General base class for ingesting data into the database
 
@@ -52,8 +51,7 @@ class Ingest(object):
 
         """
         results = {}
-        sqlstr = "select hdu, UPPER(attribute_name), position, column_name, datafile_datatype from ops_datafile_metadata where filetype = '%s'" % (
-            self.filetype)
+        sqlstr = "select hdu, UPPER(attribute_name), position, column_name, datafile_datatype from ops_datafile_metadata where filetype = '%s'" % (self.filetype)
         if self.order is not None:
             sqlstr += " order by %s" % (self.order)
         cursor = self.dbh.cursor()
@@ -74,10 +72,9 @@ class Ingest(object):
             if hdr not in results:
                 results[hdr] = OrderedDict()
             if rec[1] not in results[hdr]:
-                results[hdr][rec[1]] = Entry(hdu=hdr, attribute_name=rec[1],
-                                             position=rec[2], column_name=rec[3], dtype=rec[4])
+                results[hdr][rec[1]] = Entry(hdu=hdr, attribute_name=rec[1], position=rec[2], column_name=rec[3], dtype=rec[4])
             else:
-                results[hdr][rec[1]].append(rec[3], rec[2])
+                results[hdr][rec[1]].append(rec[3],rec[2])
         cursor.close()
         return results
 
@@ -102,17 +99,17 @@ class Ingest(object):
         while num < 5:
             num += 1
             try:
-                sqlstr = "select count(*) from %s where filename='%s'" % (self.targettable,
-                                                                          self.shortfilename)
+                sqlstr = "select count(*) from %s where filename='%s'" % (self.targettable, self.shortfilename)
                 cursor = self.dbh.cursor()
                 cursor.execute(sqlstr)
                 count = cursor.fetchone()[0]
-
+        
                 return count
             except:
                 if num == 5:
                     raise
                 time.sleep(10)  # sleep 10 seconds and retry
+
 
     def isLoaded(self):
         """ determine if the data have already been loaded into the database,
@@ -126,14 +123,14 @@ class Ingest(object):
         if numDbObjects > 0:
             loaded = True
             if numDbObjects == numCatObjects:
-                self.info("INFO: file " + self.fullfilename +
+                self.info("INFO: file " + self.fullfilename + 
                           " already ingested with the same number of" +
                           " objects. Skipping.")
             else:
                 miscutils.fwdebug_print("ERROR: file " + self.fullfilename +
-                                        " already ingested, but the number of objects is" +
-                                        " DIFFERENT: catalog=" + str(numCatObjects) +
-                                        "; DB=" + str(numDbObjects) + ".")
+                          " already ingested, but the number of objects is" +
+                          " DIFFERENT: catalog=" + str(numCatObjects) +
+                          "; DB=" + str(numDbObjects) + ".")
 
         return loaded
 
@@ -143,7 +140,7 @@ class Ingest(object):
         """
         if self.generateRows() == 1:
             return 1
-        for k, v in self.constants.iteritems():
+        for k,v in self.constants.iteritems():
             if isinstance(v, str):
                 self.constants[k] = "'" + v + "'"
             else:
@@ -159,7 +156,7 @@ class Ingest(object):
         sqlstr = "insert into %s ( " % (self.targettable)
         sqlstr += ', '.join(self.constants.keys() + columns)
         sqlstr += ") values ("
-        sqlstr += ', '.join(self.constants.values() + places)
+        sqlstr +=  ', '.join(self.constants.values() + places)
         sqlstr += ")"
         cursor = self.dbh.cursor()
         cursor.prepare(sqlstr)
@@ -180,7 +177,7 @@ class Ingest(object):
             se = sys.exc_info()
             e = str(se[1])
             tb = se[2]
-            print "Exception raised: ", e.strip(), " while ingesting ", self.shortfilename
+            print "Exception raised: ",e.strip()," while ingesting ",self.shortfilename
             print "Traceback: "
             traceback.print_tb(tb)
             print " "
@@ -198,7 +195,6 @@ class Ingest(object):
 
 class Entry(object):
     __slots__ = ["hdu", "attribute_name", "position", "column_name", "dtype"]
-
     def __init__(self, **kwargs):
         """ Simple light weight class to hold entries from the ops_datafile_metadata
             table
@@ -212,12 +208,12 @@ class Entry(object):
 
         for item in ["column_name", "position"]:
             if item in kwargs:
-                setattr(self, item, [kwargs[item]])
+                setattr(self,item,[kwargs[item]])
                 del kwargs[item]
         for kw, arg in kwargs.iteritems():
             setattr(self, kw, arg)
         if len(self.position) != len(self.column_name):
-            raise Exception("BAD MATCH %d  %d" % (len(self.position), len(self.column_name)))
+            raise Exception("BAD MATCH %d  %d" % (len(self.position),len(self.column_name)))
 
     def append(self, column_name, position):
         """ Method to append data to specific elements of the class

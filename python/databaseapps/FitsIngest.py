@@ -4,7 +4,6 @@ import traceback
 from Ingest import Ingest, Entry
 from despymisc import miscutils
 
-
 class FitsIngest(Ingest):
     # maximum number of rows to grap from a fits table at a time
     fits_chunk = 10000
@@ -68,10 +67,10 @@ class FitsIngest(Ingest):
                 endrow = min(startrow+self.fits_chunk, lastrow)
 
                 data = fitsio.read(
-                    self.fullfilename,
-                    rows=range(startrow, endrow),
-                    columns=self.orderedColumns, ext=self.objhdu
-                )
+                        self.fullfilename,
+                        rows=range(startrow,endrow),
+                        columns=self.orderedColumns,ext=self.objhdu
+                        )
 
                 for row in data:
                     linecount += 1
@@ -85,7 +84,7 @@ class FitsIngest(Ingest):
 
                     coadd_object_id = None
 
-                    for idx in range(0, len(self.orderedColumns)):
+                    for idx in range(0,len(self.orderedColumns)):
                         # if the COADD_OBJECT_ID dictionary is being created
                         if self.generateID and self.orderedColumns[idx] == "NUMBER":
                             if self.idDict.has_key(row[idx]):
@@ -102,8 +101,7 @@ class FitsIngest(Ingest):
                             try:
                                 outrow.append(self.idDict[row[idx]])
                             except KeyError:
-                                miscutils.fwdebug_print(
-                                    "ERROR: Coadd number (%i) specified that does not have a corresponding coadd id, found in row %i." % (row[idx], linecount))
+                                miscutils.fwdebug_print("ERROR: Coadd number (%i) specified that does not have a corresponding coadd id, found in row %i." % (row[idx], linecount))
                                 return 1
 
                         # if this column is an array of values
@@ -140,7 +138,7 @@ class FitsIngest(Ingest):
             elif self.matchCount and len(self.idDict.keys()) != len(self.sqldata):
                 self.status = 1
                 retval = 1
-                miscutils.fwdebug_print("Incorrect number of rows in %s. Count is %i, should be %i" % (
-                    self.shortfilename, len(self.sqldata), len(self.idDict.keys())))
+                miscutils.fwdebug_print("Incorrect number of rows in %s. Count is %i, should be %i" % (self.shortfilename, len(self.sqldata), len(self.idDict.keys())))
 
             return retval
+

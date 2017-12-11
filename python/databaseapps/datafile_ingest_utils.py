@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+# $Id$
+# $Rev::                                  $:  # Revision of last commit.
+# $LastChangedBy::                        $:  # Author of last commit.
+# $LastChangedDate::                      $:  # Date of last commit.
+
 """  Functions used to ingest non-metadata from a file into a database table based upon filetype """
 
 import sys
@@ -23,8 +28,6 @@ def ci_get(mydict, mykey):
 # end ci_get
 
 ######################################################################
-
-
 def print_node(indict, level, filehandle):
     """ print a node """
     leveltabs = "\t" * level
@@ -42,8 +45,6 @@ def print_node(indict, level, filehandle):
 # end print_node
 
 ######################################################################
-
-
 def ingest_datafile_contents(sourcefile, filetype, tablename, metadata, datadict, dbh):
     """ ingest contents of a data file """
     # WARNING: alters dbh session's NLS_TIMESTAMP_FORMAT
@@ -77,8 +78,7 @@ def ingest_datafile_contents(sourcefile, filetype, tablename, metadata, datadict
                 # handle timestamp format; does not support multiple formats in one input file
                 if cols[DI_DATATYPE] == 'date':
                     if dateformat and dateformat != cols[DI_FORMAT]:
-                        sys.stderr.write(
-                            "ERROR: Unsupported configuration for filetype=%s: Multiple different date formats found\n" % filetype)
+                        sys.stderr.write("ERROR: Unsupported configuration for filetype=%s: Multiple different date formats found\n" % filetype)
                         exit(1)
                     dateformat = cols[DI_FORMAT]
                 ###
@@ -142,6 +142,7 @@ def ingest_datafile_contents(sourcefile, filetype, tablename, metadata, datadict
 # end ingest_datafile_contents
 
 
+
 ######################################################################
 #def get_sections_for_filetype(filetype, dbh):
 #    """ Get definitions from database for what and how to save the data """
@@ -175,7 +176,7 @@ def is_ingested(filename, tablename, dbh):
 
     found = False
     curs = dbh.cursor()
-    curs.execute(sqlstr, {"fname": filename})
+    curs.execute(sqlstr, {"fname":filename})
     for row in curs:
         found = True
     curs.close()

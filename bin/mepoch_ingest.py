@@ -11,8 +11,7 @@ from databaseapps.Mangle import Mangle
 from databaseapps.Wavg import Wavg
 from databaseapps.Extinction import Extinction
 
-
-def checkParam(args, param, required):
+def checkParam(args,param,required):
     """ Check that a parameter exists, else return None
 
     """
@@ -24,13 +23,11 @@ def checkParam(args, param, required):
         else:
             return None
 
-
 def printinfo(msg):
     """ Generic print statement with time stamp
 
     """
-    print(time.strftime(CoaddCatalog.debugDateFormat) + " - " + msg)
-
+    print time.strftime(CoaddCatalog.debugDateFormat) + " - " + msg
 
 def getfilelist(file):
     """ Convert a comma separated list of items in a file into a list
@@ -44,7 +41,6 @@ def getfilelist(file):
         files[-1][-1] = files[-1][-1].strip()
     f.close()
     return files
-
 
 if __name__ == '__main__':
 
@@ -81,34 +77,35 @@ if __name__ == '__main__':
     parser.add_argument('--det_pfwid', action='store')
     parser.add_argument('--alt_table', action='store')
 
+
     args, unknown_args = parser.parse_known_args()
     args = vars(args)
 
-    bandcat = checkParam(args, 'bandcat_list', False)
-    detcat = checkParam(args, 'detcat', True)
-    extinct = checkParam(args, 'extinct', False)
+    bandcat = checkParam(args,'bandcat_list',False)
+    detcat = checkParam(args,'detcat',True)
+    extinct = checkParam(args,'extinct',False)
     extinct_band = checkParam(args, 'extinct_band_list', False)
-    healpix = checkParam(args, 'healpix', False)
-    wavg = checkParam(args, 'wavg_list', False)
-    wavg_oclink = checkParam(args, 'wavg_oclink_list', False)
-    ccdgon = checkParam(args, 'ccdgon_list', False)
-    molygon = checkParam(args, 'molygon_list', False)
-    molygon_ccdgon = checkParam(args, 'molygon_ccdgon_list', False)
-    coadd_object_molygon = checkParam(args, 'coadd_object_molygon_list', False)
-    section = checkParam(args, 'section', False)
-    services = checkParam(args, 'des_services', False)
+    healpix = checkParam(args,'healpix',False)
+    wavg = checkParam(args,'wavg_list',False)
+    wavg_oclink = checkParam(args,'wavg_oclink_list',False)
+    ccdgon = checkParam(args,'ccdgon_list',False)
+    molygon = checkParam(args,'molygon_list',False)
+    molygon_ccdgon = checkParam(args,'molygon_ccdgon_list',False)
+    coadd_object_molygon = checkParam(args,'coadd_object_molygon_list',False)
+    section = checkParam(args,'section',False)
+    services = checkParam(args,'des_services',False)
     alt_section = checkParam(args, 'alt_section', False)
     det_pfwid = checkParam(args, 'det_pfwid', False)
     alt_table = checkParam(args, 'alt_table', False)
 
-    status = [" completed", " aborted"]
+    status = [" completed"," aborted"]
     dbh = desdbi.DesDbi(services, section, retry=True)
     # do some quick checking
     try:
         if alt_section is None:
             alt_section = section
         if alt_table is not None and det_pfwid is None:
-            print("Getting det_pfwid from database.")
+            print "Getting det_pfwid from database."
             curs = dbh.cursor()
             tcoadd_file = detcat.split('/')[-1]
             if tcoadd_file.endswith('.fits'):
@@ -128,17 +125,17 @@ if __name__ == '__main__':
         se = sys.exc_info()
         e = se[1]
         tb = se[2]
-        print("Exception raised:", e)
-        print("Traceback: ")
+        print "Exception raised:", e
+        print "Traceback: "
         traceback.print_tb(tb)
-        print(" ")
+        print " "
         exit(1)
 
-    print("\n###################### COADD OBJECT INGESTION ########################\n")
+
+    print "\n###################### COADD OBJECT INGESTION ########################\n"
     try:
         printinfo("Working on detection catalog " + detcat)
-        detobj = CoaddCatalog(
-            ingesttype='det', filetype=args['coadd_object_filetype'], datafile=detcat, idDict=coaddObjectIdDict, dbh=dbh)
+        detobj = CoaddCatalog(ingesttype='det', filetype=args['coadd_object_filetype'], datafile=detcat, idDict=coaddObjectIdDict, dbh=dbh)
 
         if alt_table is not None:
             detobj.retrieveCoaddObjectIds(args['des_services'], alt_section, det_pfwid, alt_table)
@@ -155,15 +152,15 @@ if __name__ == '__main__':
         se = sys.exc_info()
         e = se[1]
         tb = se[2]
-        print("Exception raised:", e)
-        print("Traceback: ")
+        print "Exception raised:", e
+        print "Traceback: "
         traceback.print_tb(tb)
-        print(" ")
+        print " "
         exit(1)
 
     # do a sanity check, as these numbers are needed for the following steps
     if len(coaddObjectIdDict) == 0:
-        print("Coadd Object Dict is empty, cannot continue")
+        print "Coadd Object Dict is empty, cannot continue"
         exit(1)
 
     if bandcat is not None:
@@ -172,8 +169,7 @@ if __name__ == '__main__':
             try:
                 bfile = bandfile[0]
                 printinfo("Working on band catalog " + bfile)
-                bandobj = CoaddCatalog(
-                    ingesttype='band', filetype=args['coadd_object_filetype'], datafile=bfile, idDict=coaddObjectIdDict, dbh=dbh)
+                bandobj = CoaddCatalog(ingesttype='band', filetype=args['coadd_object_filetype'], datafile=bfile, idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = bandobj.isLoaded()
                 if not isLoaded:
                     stat = bandobj.executeIngest()
@@ -183,20 +179,19 @@ if __name__ == '__main__':
                 se = sys.exc_info()
                 e = se[1]
                 tb = se[2]
-                print("Exception raised:", e)
-                print("Traceback: ")
+                print "Exception raised:", e
+                print "Traceback: "
                 traceback.print_tb(tb)
-                print(" ")
+                print " "
                 retval += 1
     else:
-        print("Skipping Coadd Band catalog ingestion, none specified on command line")
+        print "Skipping Coadd Band catalog ingestion, none specified on command line"
 
-    print("\n###################### HEALPIX INGESTION ########################\n")
+    print "\n###################### HEALPIX INGESTION ########################\n"
     if healpix is not None:
         try:
             printinfo("Working on healpix catalog " + healpix)
-            healobj = CoaddHealpix(filetype=args['coadd_hpix_filetype'],
-                                   datafile=healpix, idDict=coaddObjectIdDict, dbh=dbh)
+            healobj = CoaddHealpix(filetype=args['coadd_hpix_filetype'], datafile=healpix, idDict=coaddObjectIdDict, dbh=dbh)
             isLoaded = healobj.isLoaded()
             if not isLoaded:
                 stat = healobj.executeIngest()
@@ -206,23 +201,23 @@ if __name__ == '__main__':
             se = sys.exc_info()
             e = se[1]
             tb = se[2]
-            print("Exception raised:", e)
-            print("Traceback: ")
+            print "Exception raised:", e
+            print "Traceback: "
             traceback.print_tb(tb)
-            print(" ")
+            print " "
             retval += 1
     else:
-        print("Skipping Healpix ingestion, none specified on command line")
+        print "Skipping Healpix ingestion, none specified on command line"
 
-    print("\n###################### WEIGHTED AVERAGE INGESTION ########################\n")
+
+    print "\n###################### WEIGHTED AVERAGE INGESTION ########################\n"
 
     if wavg is not None:
         wavgfiles = getfilelist(wavg)
         for file in wavgfiles:
             try:
                 printinfo("Working on wavg catalog " + file[0])
-                wavgobj = Wavg(filetype=args['wavg_filetype'], datafile=file[0],
-                               idDict=coaddObjectIdDict, dbh=dbh)
+                wavgobj = Wavg(filetype=args['wavg_filetype'], datafile=file[0], idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = wavgobj.isLoaded()
                 if not isLoaded:
                     stat = wavgobj.executeIngest()
@@ -232,21 +227,20 @@ if __name__ == '__main__':
                 se = sys.exc_info()
                 e = se[1]
                 tb = se[2]
-                print("Exception raised:", e)
-                print("Traceback: ")
+                print "Exception raised:", e
+                print "Traceback: "
                 traceback.print_tb(tb)
-                print(" ")
+                print " "
                 retval += 1
     else:
-        print("Skipping Weighted Average ingestion, none specified on command line")
+        print "Skipping Weighted Average ingestion, none specified on command line"
 
     if wavg_oclink is not None:
         wavgfiles = getfilelist(wavg_oclink)
         for file in wavgfiles:
             try:
                 printinfo("Working on wavg_oclink catalog " + file[0])
-                wavgobj = Wavg(filetype=args['wavg_oclink_filetype'], datafile=file[0],
-                               idDict=coaddObjectIdDict, dbh=dbh, matchCount=False)
+                wavgobj = Wavg(filetype=args['wavg_oclink_filetype'], datafile=file[0], idDict=coaddObjectIdDict, dbh=dbh, matchCount=False)
                 isLoaded = wavgobj.isLoaded()
                 if not isLoaded:
                     stat = wavgobj.executeIngest()
@@ -256,23 +250,22 @@ if __name__ == '__main__':
                 se = sys.exc_info()
                 e = se[1]
                 tb = se[2]
-                print("Exception raised:", e)
-                print("Traceback: ")
+                print "Exception raised:", e
+                print "Traceback: "
                 traceback.print_tb(tb)
-                print(" ")
+                print " "
                 retval += 1
     else:
-        print("Skipping Weighted Average OCLink ingestion, none specified on command line")
+        print "Skipping Weighted Average OCLink ingestion, none specified on command line"
 
-    print("\n###################### MANGLE INGESTION ########################\n")
+    print "\n###################### MANGLE INGESTION ########################\n"
 
     if ccdgon is not None:
         ccdfiles = getfilelist(ccdgon)
         for file in ccdfiles:
             try:
                 printinfo("Working on ccdgon file " + file[0])
-                ccdobj = Mangle(datafile=file[0], filetype=args['ccdgon_filetype'],
-                                idDict=coaddObjectIdDict, dbh=dbh)
+                ccdobj = Mangle(datafile=file[0], filetype=args['ccdgon_filetype'], idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = ccdobj.isLoaded()
                 if not isLoaded:
                     stat = ccdobj.executeIngest()
@@ -282,21 +275,20 @@ if __name__ == '__main__':
                 se = sys.exc_info()
                 e = se[1]
                 tb = se[2]
-                print("Exception raised:", e)
-                print("Traceback: ")
+                print "Exception raised:", e
+                print "Traceback: "
                 traceback.print_tb(tb)
-                print(" ")
+                print " "
                 retval += 1
     else:
-        print("Skipping CCDgon ingestion, none specified on command line")
+        print "Skipping CCDgon ingestion, none specified on command line"
 
     if molygon is not None:
         molyfiles = getfilelist(molygon)
         for file in molyfiles:
             try:
                 printinfo("Working on molygon file " + file[0])
-                molyobj = Mangle(datafile=file[0], filetype=args['molygon_filetype'],
-                                 idDict=coaddObjectIdDict, dbh=dbh)
+                molyobj = Mangle(datafile=file[0], filetype=args['molygon_filetype'], idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = molyobj.isLoaded()
                 if not isLoaded:
                     stat = molyobj.executeIngest()
@@ -306,21 +298,20 @@ if __name__ == '__main__':
                 se = sys.exc_info()
                 e = se[1]
                 tb = se[2]
-                print("Exception raised:", e)
-                print("Traceback: ")
+                print "Exception raised:", e
+                print "Traceback: "
                 traceback.print_tb(tb)
-                print(" ")
+                print " "
                 retval += 1
     else:
-        print("Skipping Molygon ingestion, none specified on command line")
+        print "Skipping Molygon ingestion, none specified on command line"
 
     if molygon_ccdgon is not None:
         mcfiles = getfilelist(molygon_ccdgon)
         for file in mcfiles:
             try:
                 printinfo("Working on molygon_ccdgon file " + file[0])
-                mcobj = Mangle(datafile=file[0], filetype=args['molygon_ccdgon_filetype'],
-                               idDict=coaddObjectIdDict, dbh=dbh)
+                mcobj = Mangle(datafile=file[0], filetype=args['molygon_ccdgon_filetype'], idDict=coaddObjectIdDict, dbh=dbh)
                 isLoaded = mcobj.isLoaded()
                 if not isLoaded:
                     stat = mcobj.executeIngest()
@@ -330,21 +321,20 @@ if __name__ == '__main__':
                 se = sys.exc_info()
                 e = se[1]
                 tb = se[2]
-                print("Exception raised:", e)
-                print("Traceback: ")
+                print "Exception raised:", e
+                print "Traceback: "
                 traceback.print_tb(tb)
-                print(" ")
+                print " "
                 retval += 1
     else:
-        print("Skipping Molygon CCDgon ingestion, none specified on command line")
+        print "Skipping Molygon CCDgon ingestion, none specified on command line"
 
     if coadd_object_molygon is not None:
         cmfiles = getfilelist(coadd_object_molygon)
         for file in cmfiles:
             try:
                 printinfo("Working on coadd_object_molygon file " + file[0])
-                cmobj = Mangle(datafile=file[0], filetype=args['coadd_object_molygon_filetype'],
-                               idDict=coaddObjectIdDict, dbh=dbh, replacecol=3, checkcount=True, skipmissing=alt_table is not None)
+                cmobj = Mangle(datafile=file[0], filetype=args['coadd_object_molygon_filetype'], idDict=coaddObjectIdDict, dbh=dbh, replacecol=3, checkcount=True, skipmissing=alt_table is not None)
                 isLoaded = cmobj.isLoaded()
                 if not isLoaded:
                     stat = cmobj.executeIngest()
@@ -354,21 +344,20 @@ if __name__ == '__main__':
                 se = sys.exc_info()
                 e = se[1]
                 tb = se[2]
-                print("Exception raised:", e)
-                print("Traceback: ")
+                print "Exception raised:", e
+                print "Traceback: "
                 traceback.print_tb(tb)
-                print(" ")
+                print " "
                 retval += 1
     else:
-        print("Skipping Coadd Object Molygon ingestion, none specified on command line")
+        print "Skipping Coadd Object Molygon ingestion, none specified on command line"
 
-    print("\n###################### EXTINCTION INGESTION ########################\n")
+    print "\n###################### EXTINCTION INGESTION ########################\n"
 
     if extinct is not None:
         try:
             printinfo("Working on extinction catalog " + extinct)
-            extobj = Extinction(datafile=extinct, idDict=coaddObjectIdDict,
-                                filetype=args['extinct_filetype'], dbh=dbh)
+            extobj = Extinction(datafile=extinct, idDict=coaddObjectIdDict, filetype=args['extinct_filetype'], dbh=dbh)
             isLoaded = extobj.isLoaded()
             if not isLoaded:
                 stat = extobj.executeIngest()
@@ -378,21 +367,20 @@ if __name__ == '__main__':
             se = sys.exc_info()
             e = se[1]
             tb = se[2]
-            print("Exception raised:", e)
-            print("Traceback: ")
+            print "Exception raised:", e
+            print "Traceback: "
             traceback.print_tb(tb)
-            print(" ")
+            print " "
             retval += 1
     else:
-        print("Skipping Excintion ingestion, none specified on command line")
+        print "Skipping Excintion ingestion, none specified on command line"
 
     if extinct_band is not None:
         exfiles = getfilelist(extinct_band)
         for file in exfiles:
             try:
                 printinfo("Working on extinction catalog " + file[0])
-                extobj = Extinction(datafile=file[0], idDict=coaddObjectIdDict,
-                                    filetype=args['extinct_band_filetype'], dbh=dbh)
+                extobj = Extinction(datafile=file[0], idDict=coaddObjectIdDict, filetype=args['extinct_band_filetype'], dbh=dbh)
                 isLoaded = extobj.isLoaded()
                 if not isLoaded:
                     stat = extobj.executeIngest()
@@ -402,13 +390,13 @@ if __name__ == '__main__':
                 se = sys.exc_info()
                 e = se[1]
                 tb = se[2]
-                print("Exception raised:", e)
-                print("Traceback: ")
+                print "Exception raised:", e
+                print "Traceback: "
                 traceback.print_tb(tb)
-                print(" ")
+                print " "
                 retval += 1
     else:
-        print("Skipping Extinction Band ingestion, none specified on command line")
+        print "Skipping Extinction Band ingestion, none specified on command line"
 
-    print("EXITING WITH RETVAL", retval)
+    print "EXITING WITH RETVAL",retval
     exit(retval)
