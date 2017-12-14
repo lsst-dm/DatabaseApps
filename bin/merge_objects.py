@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 
-__version__ = "$Rev: 11430 $"
-
 import os
 import sys
 import argparse
 from despydb import desdbi
+
 
 
 def parseTableName(inname):

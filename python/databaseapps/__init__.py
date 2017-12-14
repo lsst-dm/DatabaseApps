@@ -19,8 +19,6 @@
 
 """
 
-__version__ = "$Rev: 10292 $"
-
 # Note that pydoc includes documentation for entries in the __all__  list when
 # generating documentation for this package.
 

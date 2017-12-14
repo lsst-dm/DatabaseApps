@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 
-__version__ = "$Rev: 11430 $"
-
 import os
 import sys
 import time
 import argparse
 from databaseapps.objectcatalog import ObjectCatalog as ObjectCatalog
 from databaseapps.objectcatalog import Timing as Timing
+
 
 
 def checkParam(args, param, required):

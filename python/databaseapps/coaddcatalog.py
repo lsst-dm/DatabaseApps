@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-__version__ = "$Rev$"
-
 import os
 import sys
 import fitsio
