@@ -1,16 +1,10 @@
 #!/usr/bin/env python
 
-# $Id: merge_objects.py 11430 2014-01-17 21:41:16Z tomashek $
-# $Rev::                                  $:  # Revision of last commit.
-# $LastChangedBy::                        $:  # Author of last commit.
-# $LastChangedDate::                      $:  # Date of last commit.
-
-__version__ = "$Rev: 11430 $"
-
 import os
 import sys
 import argparse
 from despydb import desdbi
+
 
 def parseTableName(inname):
     tablename = None
