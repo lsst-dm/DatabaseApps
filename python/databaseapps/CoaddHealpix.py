@@ -1,5 +1,6 @@
 from FitsIngest import FitsIngest
 
+
 class CoaddHealpix(FitsIngest):
 
     def __init__(self, filetype, datafile, idDict, dbh):
@@ -10,4 +11,4 @@ class CoaddHealpix(FitsIngest):
 
         self.constants = {
             "FILENAME": self.shortfilename,
-            }
+        }

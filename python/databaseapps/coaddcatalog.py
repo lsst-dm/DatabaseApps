@@ -49,7 +49,6 @@ class CoaddCatalog:
     debug = True
     debugDateFormat = '%Y-%m-%d %H:%M:%S'
 
-
     def __init__(self, ingesttype, datafile, idDict):
 
         self.debug("start CoaddIngest.init() for file %s" % datafile)
@@ -64,7 +63,7 @@ class CoaddCatalog:
 
         # grab current schema by resolving from table in a very odd way
         self.debug("start resolveDbObject() for table: %s" % self.targettable)
-        (self.schema,self.targettable) = ingestutils.resolveDbObject(self.targettable,self.dbh)
+        (self.schema, self.targettable) = ingestutils.resolveDbObject(self.targettable, self.dbh)
         self.debug("schema, targettable = %s, %s" % (self.schema, self.targettable))
 
         self.fullfilename = datafile
@@ -77,22 +76,18 @@ class CoaddCatalog:
         self.dbDict = self.getObjectColumns()
         self.debug("CoaddIngest.init() done")
 
-
     def __del__(self):
         if self.dbh:
             self.dbh.close()
         if self.fits:
             self.fits.close()
 
-
     def debug(self, msg):
         if self.debug:
             print time.strftime(self.debugDateFormat) + " - " + msg
 
-
     def info(self, msg):
         print time.strftime(self.debugDateFormat) + " - " + msg
-
 
     def getObjectColumns(self):
         results = OrderedDict()
@@ -112,12 +107,12 @@ class CoaddCatalog:
             order by 1,2,3 '''
         cursor = self.dbh.cursor()
         params = {
-            'ftype':self.filetype,
-            'tabname':self.targettable,
-            'ownname':self.schema
-            }
+            'ftype': self.filetype,
+            'tabname': self.targettable,
+            'ownname': self.schema
+        }
 
-        cursor.execute(sqlstr,params)
+        cursor.execute(sqlstr, params)
         records = cursor.fetchall()
         for rec in records:
             hdr = None
@@ -163,13 +158,12 @@ class CoaddCatalog:
             # An example of this are the MAG_APER values, which will be stored
             # in the db as MAG_APER1, MAG_APER2...
             if rec[1] not in results[hdr]:
-                results[hdr][rec[1]] = [[rec[3]],rec[4],rec[5],[str(rec[2])]]
+                results[hdr][rec[1]] = [[rec[3]], rec[4], rec[5], [str(rec[2])]]
             else:
                 results[hdr][rec[1]][self.COLUMN_NAME].append(rec[3])
                 results[hdr][rec[1]][self.POSITION].append(str(rec[2]))
         cursor.close()
         return results
-
 
     ###########################################################################
     #
@@ -186,7 +180,7 @@ class CoaddCatalog:
             where filename=:fname
             '''
         cursor = self.dbh.cursor()
-        cursor.execute(sqlstr % self.catalogtable,{"fname":self.shortfilename})
+        cursor.execute(sqlstr % self.catalogtable, {"fname": self.shortfilename})
         records = cursor.fetchall()
 
         if(len(records) > 0):
@@ -206,7 +200,6 @@ class CoaddCatalog:
         else:
             exit("File " + self.shortfilename + " missing from catalog table")
 
-
     ###########################################################################
     #
     # executeIngest:
@@ -214,7 +207,7 @@ class CoaddCatalog:
     # Ingest all of the data from one FITS file into coadd_object table.
     #
     ###########################################################################
-    def executeIngest(self,firstrow=1,lastrow=-1):
+    def executeIngest(self, firstrow=1, lastrow=-1):
         if lastrow == -1:
             lastrow = self.fits[self.objhdu].get_nrows()
 
@@ -256,10 +249,10 @@ class CoaddCatalog:
                 endrow = min(startrow+self.fits_chunk, lastrow)
 
                 data = fitsio.read(
-                        self.fullfilename,
-                        rows=range(startrow,endrow),
-                        columns=orderedFitsColumns,ext=self.objhdu
-                        )
+                    self.fullfilename,
+                    rows=range(startrow, endrow),
+                    columns=orderedFitsColumns, ext=self.objhdu
+                )
 
                 for row in data:
                     # IMPORTANT! Must convert numpy array to python list, or
@@ -271,7 +264,7 @@ class CoaddCatalog:
                     outrow = []
 
                     # process each value, and add to the outrow array
-                    for idx in range(0,len(orderedFitsColumns)):
+                    for idx in range(0, len(orderedFitsColumns)):
                         # insert db-generated id at the beginning of the list
                         if orderedFitsColumns[idx] == "NUMBER":
                             if self.idDict.has_key(row[idx]):
@@ -522,7 +515,8 @@ class CoaddCatalog:
                 ''' % self.targettable
 
             # add constants (band, tile, filename, and pfw_attempt_id) to sql
-            sqlstr = sqlstr + "'" + self.band + "', '" + self.tilename + "', '" + self.shortfilename + "', " + str(self.pfw_attempt_id) + ", "
+            sqlstr = sqlstr + "'" + self.band + "', '" + self.tilename + "', '" + \
+                self.shortfilename + "', " + str(self.pfw_attempt_id) + ", "
 
             # add bind variable placeholders to sql string
             for i in range(1, len(sqldata[0])+1):
@@ -541,7 +535,6 @@ class CoaddCatalog:
             cursor.close()
             self.dbh.commit()
             self.info("row inserts complete")
-
 
     ###########################################################################
     #
@@ -563,7 +556,6 @@ class CoaddCatalog:
 
         return records
 
-
     def numAlreadyIngested(self):
         sqlstr = '''
             select count(*)
@@ -571,15 +563,13 @@ class CoaddCatalog:
             where filename=:fname
             '''
         cursor = self.dbh.cursor()
-        cursor.execute(sqlstr % self.targettable,{"fname":self.shortfilename})
+        cursor.execute(sqlstr % self.targettable, {"fname": self.shortfilename})
         count = cursor.fetchone()[0]
-        
-        return count
 
+        return count
 
     def getNumObjects(self):
         return self.fits[self.objhdu].get_nrows()
-
 
     def isLoaded(self):
         self.debug("starting isLoaded()")
@@ -594,7 +584,7 @@ class CoaddCatalog:
         if numDbObjects > 0:
             loaded = True
             if numDbObjects == numCatObjects:
-                self.info("WARNING: file " + self.fullfilename + 
+                self.info("WARNING: file " + self.fullfilename +
                           " already ingested with the same number of" +
                           " objects. Aborting new ingest.")
                 exitcode = 0
@@ -607,4 +597,4 @@ class CoaddCatalog:
                 exitcode = 1
 
         self.debug("finished isLoaded()")
-        return (loaded,exitcode)
+        return (loaded, exitcode)
