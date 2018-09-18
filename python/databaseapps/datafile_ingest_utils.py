@@ -2,8 +2,9 @@
 """  Functions used to ingest non-metadata from a file into a database table based upon filetype """
 
 import sys
-import pyfits
 import numpy
+from astropy.io import fits
+
 
 import despymisc.miscutils as miscutils
 from despymisc.xmlslurp import Xmlslurper
@@ -193,7 +194,7 @@ def get_fits_data(fullname, whichhdu):
     except ValueError:
         hdu = whichhdu
 
-    hdulist = pyfits.open(fullname)
+    hdulist = fits.open(fullname)
     hdr = hdulist[hdu].header
 
     mydict = {}
