@@ -23,44 +23,10 @@ def ci_get(mydict, mykey):
     return None
 # end ci_get
 
-######################################################################
-
-
-def print_node(indict, level, filehandle):
-    """ print a node """
-    leveltabs = "\t" * level
-    #leveltabs = ""
-    #for i in range(level):
-    #    leveltabs = leveltabs + "\t"
-
-    for key, value in indict.iteritems():
-        if isinstance(value, dict):
-            print >>filehandle, leveltabs + "<" + str(key) + ">"
-            print_node(value, level+1, filehandle)
-            print >>filehandle, leveltabs + "</" + str(key) + ">"
-        else:
-            print >>filehandle, leveltabs + str(key) + "=" + str(value)
-# end print_node
 
 ######################################################################
-
-
 def ingest_datafile_contents(sourcefile, filetype, tablename, metadata, datadict, dbh):
     """ ingest contents of a data file """
-    # WARNING: alters dbh session's NLS_TIMESTAMP_FORMAT
-
-#    #[tablename, metadata] = dbh.get_datafile_metadata(filetype)
-#
-#    if tablename == None or metadata == None:
-#        sys.stderr.write("ERROR: no metadata in database for filetype=%s. Check OPS_DATAFILE_TABLE and OPS_DATAFILE_METADATA\n" % filetype)
-#        exit(1)
-#
-#    if is_ingested(sourcefile, tablename, dbh):
-#        print "INFO: file " + sourcefile + " is already ingested\n"
-#        exit(0)
-#
-#    print "datafile_ingest.py: destination table = " + tablename
-#    #print_node(metadata, 0, sys.stdout)
     columnlist = []
     data = []
     indata = []
